@@ -1,36 +1,212 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI驱动的产品经理助手
 
-## Getting Started
+## 项目愿景
+打造一个基于AI的产品开发助手，帮助产品经理从0到1实现产品落地，降低技术门槛，实现从需求到上线的全流程支持。
 
-First, run the development server:
+## 核心特点
+- 基于自然语言对话的产品开发流程
+- AI辅助文档生成系统
+- 保留关键节点的人工干预
+- 完整的文档体系支持
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 当前开发状态
+项目已进入实现阶段，基于Next.js和React构建，主要功能包括：
+- 产品需求收集和定义
+- 文档生成和管理
+- 技术方案规划
+- 页面设计支持
+
+## 技术架构
+
+### 核心技术栈
+- **前端框架**: Next.js 15.2.4 + React 19.0.0
+- **UI组件库**: Radix UI + Tailwind CSS
+- **状态管理**: Zustand
+- **AI集成**: OpenAI API
+- **部署平台**: Vercel
+
+### 应用结构
+- **文档列表页**: 展示和管理所有创建的产品文档
+- **文档编辑页**: 创建和编辑产品文档，支持AI辅助
+- **仪表盘页**: 提供项目概览和快速访问入口
+
+## 产品架构
+
+### 1. 基于对话的产品开发流程
+
+#### 优点
+- 自然语言交互降低使用门槛
+- 通过对话更好地捕捉产品经理的真实意图
+- AI可以通过提问引导产品经理完善思路
+
+#### 需要注意
+- 如何确保对话的结构化和完整性
+- 如何避免理解偏差
+- 如何处理模糊不清的需求
+
+### 2. 文档生成体系
+
+#### 第一层：产品定义文档
+- 产品愿景
+- 目标用户画像
+- 核心价值主张
+- 关键功能列表
+
+#### 第二层：PRD文档
+- 详细功能描述
+- 用户故事
+- 业务流程
+- 数据流转
+
+#### 第三层：技术规划文档
+- 技术架构设计
+- 数据库设计
+- API接口设计
+- 前端组件设计
+
+#### 第四层：实施文档
+- 开发计划
+- 测试用例
+- 部署方案
+- 监控方案
+
+### 3. AI辅助功能
+
+#### 需求完整性检查
+- 自动检测需求中的逻辑漏洞
+- 提供相似产品的参考建议
+- 生成需求完整性检查清单
+
+#### 交互设计辅助
+- 基于需求自动推荐UI组件
+- 生成页面布局建议
+- 提供用户体验优化建议
+
+#### 技术方案生成
+- 根据需求推荐适合的技术栈
+- 生成数据库结构
+- 设计API接口规范
+
+#### 代码实现辅助
+- 生成基础代码框架
+- 提供代码实现建议
+- 自动生成单元测试
+
+### 4. 人工干预节点
+- 需求确认阶段
+- 技术方案评审
+- 关键业务逻辑确认
+- 安全相关决策
+- 性能优化决策
+
+### 5. 工作流程
+```
+对话收集需求 -> 生成初步文档 -> 人工确认和修改 -> AI完善和展开 -> 技术方案生成 -> 人工评审 -> 代码实现
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 核心规划流程 (V2 - 引入 PRD 检查)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+本助手提供三种核心规划流程，以适应不同的开发场景。用户在启动规划时会被引导选择其中一种模式：
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 流程 A：开发一个全新的产品
 
-## Learn More
+*   **适用场景:** 从零开始构思和开发新产品。
+*   **组件流程:** `ProductDefinitionForm` -> `TechnicalPlanningForm` -> `PagePlanningForm`
+*   **关键步骤:**
+    1.  **产品定义:** 全面收集产品基础信息（平台、概念、用户、核心功能、参考）及细化追问（价值、场景、优先级）。
+    2.  **技术规划:** 选择整体技术架构、数据库、API 风格、UI 库等。
+    3.  **页面规划:** 逐个规划新产品所需的核心页面。
+    4.  **完成:** 输出完整的初步规划信息。
+*   **PRD 期望:** 此流程本身旨在帮助用户生成初步的 PRD 核心内容。如果用户已有草稿，可在对话中参考。
 
-To learn more about Next.js, take a look at the following resources:
+### 流程 B：优化已有功能/页面
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+*   **适用场景:** 针对现有产品或项目中的某个具体功能或页面进行改进。
+*   **组件流程:** `OptimizationForm`
+*   **关键步骤:**
+    1.  **定位:** 确定优化的平台和具体功能/页面名称。
+    2.  **PRD 检查:** 询问是否有相关 PRD 文档描述**当前**的功能状态。
+    3.  **信息收集 (二选一):**
+        *   **有 PRD:** 用户提供 -> (AI 模拟) 读取并生成摘要 -> 用户确认/补充摘要。
+        *   **无 PRD:** 用户描述当前问题/不足。
+    4.  **目标设定:** 用户描述优化的具体目标。
+    5.  **方案构思:** 用户描述初步的优化方案或思路。
+    6.  **技术讨论点引导:** 用户思考并记录可能需要与技术团队沟通的方面（非强制技术判断）。
+    7.  **完成:** 输出优化规划信息。
+*   **PRD 期望:** 理想情况是存在描述该功能原始状态的 PRD。本次优化的 PRD (或修订) 应重点说明**问题、目标和改动方案**。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 流程 C：为现有产品添加新功能/页面
 
-## Deploy on Vercel
+*   **适用场景:** 在现有产品或项目的基础上增加新的功能模块或页面。
+*   **组件流程:** `AddFeatureForm` -> (可选) `TechnicalPlanningForm` -> (可选) `PagePlanningForm`
+*   **关键步骤:**
+    1.  **定位:** 确定添加功能的平台和新功能的名称与主要作用。
+    2.  **PRD 检查:** 询问是否有描述**新功能**需求的 PRD 文档。
+    3.  **信息收集 (二选一):**
+        *   **有 PRD:** 用户提供 -> (AI 模拟) 读取并生成关于新功能(目标/用户/流程)的摘要 -> 用户确认/补充摘要。
+        *   **无 PRD:** 用户依次描述新功能的目标与价值、目标用户、核心流程。
+    4.  **集成点:** 用户描述新功能如何与现有功能/数据交互。
+    5.  **后续规划决策:** 用户选择是否继续进行技术和页面规划。
+    6.  **(可选) 技术规划:** (若继续) 使用 `TechnicalPlanningForm` 规划新功能所需的技术支持 (基于现有技术栈)。
+    7.  **(可选) 页面规划:** (若继续) 使用 `PagePlanningForm` 规划新功能相关的页面。
+    8.  **完成:** 输出新功能规划信息。
+*   **PRD 期望:** 新功能的 PRD 应包含目标、用户、功能/故事、流程，并**重点描述如何与现有系统集成**。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 数据库设计
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+项目使用PostgreSQL数据库，主要表结构包括：
+- **users**: 用户信息表
+- **templates**: 文档模板表
+- **documents**: 用户创建的文档表
+- **document_versions**: 文档版本历史表
+- **collaborators**: 文档协作者关系表
+
+## 前端设计规范
+
+前端采用模块化设计，主要特点包括：
+- 一致的视觉风格和设计语言
+- 响应式布局，适配多种设备
+- 遵循WCAG 2.1 AA级无障碍标准
+- 统一的颜色、字体和间距系统
+
+### 颜色系统
+- 品牌主色：蓝色(#4F46E5)
+- 辅助色：紫色(#7C3AED)
+- 功能色：用于反馈和状态指示
+- 中性色：用于文本和背景
+
+### 组件库
+项目使用Radix UI + Tailwind CSS构建组件库，包括：
+- 按钮、表单、对话框等基础组件
+- 文档编辑器、模板选择器等特定组件
+- 导航和布局组件
+
+## 理想 PRD 的核心要素
+
+为了 AI 和人类能更好地理解需求，建议 PRD 包含：
+1.  **背景与目标 (Why):** 解决什么问题？目标是什么？
+2.  **目标用户 (Who):** 主要用户群体是谁？
+3.  **核心功能描述 / 用户故事 (What):** 用户能做什么？（推荐用户故事格式 + 验收标准）
+4.  **用户流程 / 交互说明 (How):** 用户如何完成任务？（可附流程图/线框图）
+5.  **范围说明 (Scope):** 包含什么？不包含什么？
+6.  **设计参考 (Visuals):** UI 设计稿链接等。
+
+## 开发与贡献
+
+### 开发环境设置
+1. 克隆仓库
+2. 安装依赖：`npm install`
+3. 启动开发服务器：`npm run dev`
+4. 打开浏览器访问：`http://localhost:3000`
+
+### 代码规范
+- 使用ESLint和Prettier保持代码质量和一致性
+- 遵循TypeScript类型安全原则
+- 组件开发遵循可重用性和可测试性原则
+
+## 后续规划
+1. 完善文档生成功能
+2. 增强AI辅助能力
+3. 添加多用户协作功能
+4. 集成更多第三方服务
+5. 优化用户界面和体验 
