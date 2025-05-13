@@ -429,33 +429,6 @@ function PureMultimodalInput({
     setInput(event.target.value);
   };
 
-  // Placeholder File Upload Function
-  const uploadFile = async (file: File): Promise<Attachment | undefined> => {
-    console.log(`MOCK: Simulating upload for file: ${file.name}`);
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        try {
-          // Use URL.createObjectURL for client-side preview. Remember to revoke!
-          const mockUrl = URL.createObjectURL(file);
-          const mockAttachment: Attachment = {
-            url: mockUrl,
-            name: file.name,
-            contentType: file.type || 'application/octet-stream',
-            size: file.size,
-          };
-          console.log(`MOCK: Upload successful for ${file.name}`);
-          resolve(mockAttachment);
-        } catch (error) {
-          console.error('MOCK: Failed to create object URL for preview:', error);
-          resolve(undefined);
-        } finally {
-           // Remove file name from upload queue
-           setUploadQueue(currentQueue => currentQueue.filter(name => name !== file.name));
-        }
-      }, 700); // Simulate delay
-    });
-  };
-
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
@@ -479,6 +452,33 @@ function PureMultimodalInput({
          setUploadQueue(currentQueue => currentQueue.filter(name => !invalidFiles.some(f => f.name === name)));
       }
 
+      // 将uploadFile移到useCallback内部
+      const uploadFile = async (file: File): Promise<Attachment | undefined> => {
+        console.log(`MOCK: Simulating upload for file: ${file.name}`);
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            try {
+              // Use URL.createObjectURL for client-side preview. Remember to revoke!
+              const mockUrl = URL.createObjectURL(file);
+              const mockAttachment: Attachment = {
+                url: mockUrl,
+                name: file.name,
+                contentType: file.type || 'application/octet-stream',
+                size: file.size,
+              };
+              console.log(`MOCK: Upload successful for ${file.name}`);
+              resolve(mockAttachment);
+            } catch (error) {
+              console.error('MOCK: Failed to create object URL for preview:', error);
+              resolve(undefined);
+            } finally {
+               // Remove file name from upload queue
+               setUploadQueue(currentQueue => currentQueue.filter(name => name !== file.name));
+            }
+          }, 700); // Simulate delay
+        });
+      };
+
       // Start uploads for valid files
       const uploadPromises = validFiles.map((file) => uploadFile(file));
       const uploadedAttachments = await Promise.all(uploadPromises);
@@ -494,7 +494,7 @@ function PureMultimodalInput({
       ]);
 
     },
-    [setAttachments, uploadFile],
+    [setAttachments],
   );
 
   const handleRemoveAttachment = useCallback(
