@@ -1,161 +1,48 @@
 {
     "techStack": "Next.js 14, React 18, TypeScript, Tailwind CSS, SWR, next-intl, Radix UI, Antd, Material UI, Framer Motion, Echarts",
     "pages": [
-      { "value": "general", "label": "通用/全局组件" },
-      { "value": "login", "label": "登录页面" },
-      { "value": "register", "label": "注册页面" },
-      { "value": "forgot_password", "label": "忘记密码/重置密码页面" },
-      { "value": "account_activation", "label": "账户激活/验证页面" },
-      { "value": "invite_landing", "label": "邀请链接落地页" },
-      { "value": "dashboard_overview", "label": "仪表盘首页/概览" },
-      { "value": "account_settings", "label": "账户设置" },
-      { "value": "trading_commission", "label": "交易佣金/费率" },
-      { "value": "twitter_feeds", "label": "Twitter信息流" },
-      { "value": "watchlist", "label": "观察列表/自选" },
-      { "value": "dashboard_news", "label": "新闻资讯(Dashboard内)" },
-      { "value": "points_center", "label": "积分中心/活动" },
-      { "value": "etfs", "label": "ETF产品列表/详情" },
-      { "value": "exchanges", "label": "交易所信息" },
-      { "value": "free_listed", "label": "免费上币项目" },
-      { "value": "discover", "label": "发现/探索" },
-      { "value": "app_download", "label": "App下载页" },
-      { "value": "currencies", "label": "币种列表/行情中心" },
-      { "value": "contact", "label": "联系我们/客服" },
-      { "value": "chart", "label": "图表分析工具页" },
-      { "value": "bbx_trackers", "label": "BBX追踪器" },
-      { "value": "become_kol", "label": "成为KOL申请页" },
-      { "value": "dex", "label": "DEX相关页面" },
-      { "value": "article", "label": "文章列表/详情" },
-      { "value": "trading_spot", "label": "交易 - 现货行情" },
-      { "value": "trading_futures", "label": "交易 - 合约详情" },
-      { "value": "community_home", "label": "社区首页/信息流" },
-      { "value": "community_post", "label": "社区帖子详情页" },
-      { "value": "community_profile", "label": "社区用户个人主页" },
-      { "value": "points_intro", "label": "积分介绍页" },
-      { "value": "privacy", "label": "隐私政策" },
-      { "value": "terms", "label": "服务条款" },
-      { "value": "news_detail", "label": "新闻详情页" },
-      { "value": "about", "label": "关于我们页面" },
-      { "value": "mobile_kol", "label": "移动端-KOL列表/主页" },
-      { "value": "mobile_login", "label": "移动端-登录特定流程" },
-      { "value": "mobile_news", "label": "移动端-新闻列表/详情" },
-      { "value": "mobile_etfs", "label": "移动端-ETF产品" },
-      { "value": "mobile_forecast", "label": "移动端-合约流动性预测" },
-      { "value": "mobile_account", "label": "移动端-账户相关" },
-      { "value": "not_found", "label": "404未找到页面" },
-      { "value": "error_page", "label": "错误提示页面" }
+      {
+        "groupLabel": "CEX - Market",
+        "options": [
+          { "value": "cex_market_watchlist", "label": "关注列表" },
+          { "value": "cex_market_crypto", "label": "加密货币" },
+          { "value": "cex_market_futures", "label": "合约交易" },
+          { "value": "cex_market_etf", "label": "ETF" },
+          { "value": "cex_market_exchanges", "label": "交易所" },
+          { "value": "cex_market_discover", "label": "发现" },
+          { "value": "cex_market_news", "label": "快讯" }
+        ]
+      },
+      {
+        "groupLabel": "DEX",
+        "options": [
+          { "value": "dex_market", "label": "市场 (DEX)" },
+          { "value": "dex_trackers", "label": "Trackers" },
+          { "value": "dex_farcaster", "label": "Farcaster" }
+        ]
+      },
+      {
+        "groupLabel": "通用",
+        "options": [
+          { "value": "common_about_us", "label": "关于我们" },
+          { "value": "common_contact_us", "label": "联系我们" },
+          { "value": "common_points", "label": "积分" },
+          { "value": "common_commission_rebate", "label": "手续费返佣" },
+          { "value": "common_user_profile", "label": "个人中心设置" }
+        ]
+      }
     ],
     "regions": {
-      "general": [
-        { "value": "global_header", "label": "顶部全局导航栏" },
-        { "value": "global_footer", "label": "底部全局页脚" },
-        { "value": "global_sidebar", "label": "全局侧边栏" },
-        { "value": "global_notification", "label": "全局通知/消息提示横幅或弹窗" },
-        { "value": "global_cookie", "label": "全局Cookie同意/隐私横幅" }
-      ],
-      "login": [
-        { "value": "login_header", "label": "页面标题/Logo区域" },
-        { "value": "login_form", "label": "登录表单整体区域" },
-        { "value": "forgot_password_link", "label": "忘记密码链接" },
-        { "value": "register_link_area", "label": "注册入口链接/按钮" },
-        { "value": "sso_buttons", "label": "第三方登录方式选择区" }
-      ],
-      "register": [
-        { "value": "register_header", "label": "页面标题/Logo区域" },
-        { "value": "register_form", "label": "注册表单整体区域" },
-        { "value": "login_link", "label": "已有账户登录入口链接" }
-      ],
-      "forgot_password": [
-        { "value": "reset_header", "label": "页面标题/引导文字区域" },
-        { "value": "email_input", "label": "邮箱输入区" },
-        { "value": "verification_code", "label": "获取验证码按钮/输入区" },
-        { "value": "new_password", "label": "新密码设置输入区" },
-        { "value": "confirm_password", "label": "确认新密码输入区" },
-        { "value": "submit_button", "label": "提交/确认重置按钮" }
-      ],
-      "account_activation": [
-        { "value": "verification_input", "label": "验证码输入区" },
-        { "value": "activation_button", "label": "激活按钮" },
-        { "value": "info_section", "label": "提示信息区" }
-      ],
-      "invite_landing": [
-        { "value": "invite_info", "label": "邀请信息展示区" },
-        { "value": "registration_entry", "label": "注册/登录入口" },
-        { "value": "rules_section", "label": "活动规则说明" }
-      ],
-      "dashboard_overview": [
-        { "value": "welcome_section", "label": "用户欢迎信息/头像区域" },
-        { "value": "asset_summary_card", "label": "账户资产总览模块" },
-        { "value": "quick_actions_panel", "label": "常用功能快捷入口模块" },
-        { "value": "watchlist_overview", "label": "个人观察列表(Watchlist)概览模块" },
-        { "value": "recent_activity_feed", "label": "最新交易动态/订单状态模块" },
-        { "value": "security_tips", "label": "安全设置提示/入口模块" },
-        { "value": "announcements", "label": "公告/消息通知模块" }
-      ],
-      "account_settings": [
-        { "value": "basic_info", "label": "基本信息编辑区" },
-        { "value": "security_settings", "label": "安全设置区" },
-        { "value": "kyc_section", "label": "身份认证(KYC)状态/入口区" },
-        { "value": "preferences", "label": "偏好设置区" },
-        { "value": "linked_accounts", "label": "关联账户管理区" }
-      ],
-      "trading_commission": [
-        { "value": "current_rate", "label": "当前费率等级显示区" },
-        { "value": "rate_table", "label": "费率表/说明区" },
-        { "value": "referral_info", "label": "邀请返佣信息区" }
-      ],
-      "twitter_feeds": [
-        { "value": "feed_display", "label": "信息流展示区" },
-        { "value": "filter_search", "label": "筛选/搜索区" },
-        { "value": "account_operations", "label": "关联账户操作区" }
-      ],
-      "watchlist": [
+      "cex_market_watchlist": [
+        { "value": "_entire_page_", "label": "整个页面" },
         { "value": "watchlist_header", "label": "列表标题/管理入口区" },
         { "value": "add_coin", "label": "添加自选币种搜索/按钮区" },
         { "value": "list_header", "label": "自选列表表头" },
         { "value": "list_content", "label": "自选列表区域" },
         { "value": "item_actions", "label": "列表项操作按钮" }
       ],
-      "dashboard_news": [
-        { "value": "news_list", "label": "新闻列表/卡片展示区" },
-        { "value": "category_filter", "label": "分类筛选" },
-        { "value": "detail_link", "label": "查看详情入口" }
-      ],
-      "points_center": [
-        { "value": "activity_list", "label": "当前活动列表区" },
-        { "value": "points_overview", "label": "我的积分/奖励概览区" },
-        { "value": "tasks_list", "label": "任务列表/签到区" },
-        { "value": "exchange_section", "label": "兑换商城/奖品列表区" }
-      ],
-      "etfs": [
-        { "value": "etf_list", "label": "ETF产品列表区" },
-        { "value": "etf_detail", "label": "单个ETF详情展示区" },
-        { "value": "subscription_section", "label": "申购/赎回操作区" }
-      ],
-      "exchanges": [
-        { "value": "exchange_list", "label": "交易所列表区" },
-        { "value": "filter_sort", "label": "筛选/排序区" },
-        { "value": "exchange_detail", "label": "单个交易所详情入口" }
-      ],
-      "free_listed": [
-        { "value": "project_list", "label": "项目列表区" },
-        { "value": "project_intro", "label": "项目介绍/投票区" },
-        { "value": "application_entry", "label": "申请入口" }
-      ],
-      "discover": [
-        { "value": "hot_coins", "label": "热门币种/概念推荐" },
-        { "value": "gainers_losers", "label": "涨跌幅榜" },
-        { "value": "market_sentiment", "label": "市场情绪指标" },
-        { "value": "new_listings", "label": "新币速递" }
-      ],
-      "app_download": [
-        { "value": "app_store", "label": "App Store链接按钮" },
-        { "value": "google_play", "label": "Google Play链接按钮" },
-        { "value": "apk_download", "label": "APK下载按钮" },
-        { "value": "app_features", "label": "App特性介绍" },
-        { "value": "qr_code", "label": "二维码扫描区" }
-      ],
-      "currencies": [
+      "cex_market_crypto": [
+        { "value": "_entire_page_", "label": "整个页面" },
         { "value": "market_filter", "label": "市场分类/筛选区" },
         { "value": "search_box", "label": "搜索框" },
         { "value": "market_header", "label": "行情列表表头" },
@@ -163,56 +50,54 @@
         { "value": "pagination", "label": "分页控件区域" },
         { "value": "watchlist_toggle", "label": "自选/观察列表切换入口" }
       ],
-      "contact": [
-        { "value": "contact_list", "label": "联系方式列表" },
-        { "value": "faq_link", "label": "常见问题(FAQ)链接" },
-        { "value": "feedback_form", "label": "意见反馈表单" }
+      "cex_market_futures": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "contract_details_header", "label": "合约信息头部" },
+        { "value": "position_management_panel", "label": "持仓管理面板" },
+        { "value": "futures_order_entry", "label": "合约下单区域" },
+        { "value": "futures_chart_area", "label": "合约K线图" }
       ],
-      "chart": [
-        { "value": "pair_selector", "label": "交易对选择区" },
-        { "value": "main_chart", "label": "主图表区" },
-        { "value": "indicator_toolbar", "label": "技术指标工具栏" },
-        { "value": "drawing_toolbar", "label": "绘图工具栏" },
-        { "value": "timeframe_selector", "label": "时间周期选择" }
+      "cex_market_etf": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "etf_list", "label": "ETF产品列表区" },
+        { "value": "etf_detail", "label": "单个ETF详情展示区" },
+        { "value": "subscription_section", "label": "申购/赎回操作区" }
       ],
-      "bbx_trackers": [
-        { "value": "tracker_type", "label": "追踪器类型选择" },
-        { "value": "data_display", "label": "数据列表/图表展示区" },
-        { "value": "filter_notify", "label": "筛选/通知设置" }
+      "cex_market_exchanges": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "exchange_list", "label": "交易所列表区" },
+        { "value": "filter_sort", "label": "筛选/排序区" },
+        { "value": "exchange_detail", "label": "单个交易所详情入口" }
       ],
-      "become_kol": [
-        { "value": "benefits_section", "label": "KOL权益说明" },
-        { "value": "requirements", "label": "申请条件" },
-        { "value": "application_form", "label": "申请表单" },
-        { "value": "submit_button", "label": "提交按钮" }
+      "cex_market_discover": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "hot_coins", "label": "热门币种/概念推荐" },
+        { "value": "gainers_losers", "label": "涨跌幅榜" },
+        { "value": "market_sentiment", "label": "市场情绪指标" },
+        { "value": "new_listings", "label": "新币速递" }
       ],
-      "dex": [
+      "cex_market_news": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "news_list", "label": "新闻列表/卡片展示区" },
+        { "value": "category_filter", "label": "分类筛选" },
+        { "value": "detail_link", "label": "查看详情入口" }
+      ],
+      "dex_market": [
+        { "value": "_entire_page_", "label": "整个页面" },
         { "value": "swap_pair", "label": "Swap交易对选择区" },
         { "value": "amount_inputs", "label": "输入/输出数量区" },
         { "value": "price_display", "label": "价格/滑点显示区" },
         { "value": "wallet_connect", "label": "连接钱包按钮" },
         { "value": "swap_button", "label": "交易按钮" }
       ],
-      "article": [
-        { "value": "article_list", "label": "文章列表卡片区" },
-        { "value": "article_content", "label": "文章详情阅读区" },
-        { "value": "category_search", "label": "分类/搜索" }
+      "dex_trackers": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "tracker_type", "label": "追踪器类型选择" },
+        { "value": "data_display", "label": "数据列表/图表展示区" },
+        { "value": "filter_notify", "label": "筛选/通知设置" }
       ],
-      "trading_spot": [
-        { "value": "pair_header", "label": "顶部交易对选择与行情概要区" },
-        { "value": "chart_area", "label": "K线图区域" },
-        { "value": "order_entry_panel", "label": "下单面板" },
-        { "value": "order_book_display", "label": "订单簿/买卖盘显示区" },
-        { "value": "trade_history_list", "label": "成交历史列表区" },
-        { "value": "asset_selector", "label": "交易对选择器" }
-      ],
-      "trading_futures": [
-        { "value": "contract_details_header", "label": "合约信息头部" },
-        { "value": "position_management_panel", "label": "持仓管理面板" },
-        { "value": "futures_order_entry", "label": "合约下单区域" },
-        { "value": "futures_chart_area", "label": "合约K线图" }
-      ],
-      "community_home": [
+      "dex_farcaster": [
+        { "value": "_entire_page_", "label": "整个页面" },
         { "value": "feed_filter", "label": "信息流筛选/排序区" },
         { "value": "new_post", "label": "发布新帖入口/按钮" },
         { "value": "post_list", "label": "帖子卡片列表区域" },
@@ -221,99 +106,50 @@
         { "value": "trending_topics", "label": "热门话题/标签云模块" },
         { "value": "suggested_users", "label": "推荐关注用户模块" }
       ],
-      "community_post": [
-        { "value": "author_info", "label": "帖子作者信息与发布时间区" },
-        { "value": "post_main", "label": "帖子主内容展示区" },
-        { "value": "interaction_stats", "label": "帖子互动数据统计区" },
-        { "value": "comments_list", "label": "评论列表显示区" },
-        { "value": "comment_input", "label": "发表评论输入框/按钮区" }
-      ],
-      "community_profile": [
-        { "value": "user_info", "label": "用户信息展示" },
-        { "value": "user_posts", "label": "发布的帖子列表" },
-        { "value": "followers_list", "label": "关注/粉丝列表" }
-      ],
-      "points_intro": [
-        { "value": "points_rules", "label": "积分规则说明" },
-        { "value": "acquisition_methods", "label": "获取方式" },
-        { "value": "usage_scenarios", "label": "使用场景" },
-        { "value": "points_faq", "label": "常见问题" }
-      ],
-      "privacy": [
-        { "value": "policy_title", "label": "政策标题" },
-        { "value": "policy_content", "label": "政策正文内容" },
-        { "value": "update_date", "label": "更新日期" }
-      ],
-      "terms": [
-        { "value": "terms_title", "label": "条款标题" },
-        { "value": "terms_content", "label": "条款正文内容" },
-        { "value": "update_date", "label": "更新日期" }
-      ],
-      "news_detail": [
-        { "value": "news_title", "label": "新闻标题" },
-        { "value": "publish_info", "label": "发布时间/来源" },
-        { "value": "news_content", "label": "新闻正文" },
-        { "value": "related_news", "label": "相关新闻推荐" },
-        { "value": "share_buttons", "label": "分享按钮" }
-      ],
-      "about": [
+      "common_about_us": [
+        { "value": "_entire_page_", "label": "整个页面" },
         { "value": "company_intro", "label": "公司介绍模块" },
         { "value": "team_intro", "label": "团队介绍模块" },
         { "value": "history_timeline", "label": "发展历程模块" },
         { "value": "contact_info", "label": "联系方式模块" },
         { "value": "brand_story", "label": "品牌故事模块" }
       ],
-      "mobile_kol": [
-        { "value": "kol_cards", "label": "KOL卡片列表" },
-        { "value": "filter_search", "label": "筛选/搜索" },
-        { "value": "kol_detail", "label": "单个KOL详情入口" }
+      "common_contact_us": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "contact_list", "label": "联系方式列表" },
+        { "value": "faq_link", "label": "常见问题(FAQ)链接" },
+        { "value": "feedback_form", "label": "意见反馈表单" }
       ],
-      "mobile_login": [
-        { "value": "login_form", "label": "登录表单" },
-        { "value": "action_buttons", "label": "操作按钮" },
-        { "value": "info_messages", "label": "提示信息" }
+      "common_points": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "activity_list", "label": "当前活动列表区" },
+        { "value": "points_overview", "label": "我的积分/奖励概览区" },
+        { "value": "tasks_list", "label": "任务列表/签到区" },
+        { "value": "exchange_section", "label": "兑换商城/奖品列表区" }
       ],
-      "mobile_news": [
-        { "value": "news_list", "label": "移动端优化的新闻列表" },
-        { "value": "news_reading", "label": "新闻内容阅读区" }
+      "common_commission_rebate": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "current_rate", "label": "当前费率等级显示区" },
+        { "value": "rate_table", "label": "费率表/说明区" },
+        { "value": "referral_info", "label": "邀请返佣信息区" }
       ],
-      "mobile_etfs": [
-        { "value": "etf_list", "label": "移动端优化的ETF列表" },
-        { "value": "etf_details", "label": "ETF详情展示" }
-      ],
-      "mobile_forecast": [
-        { "value": "chart_display", "label": "数据图表展示区" },
-        { "value": "filter_conditions", "label": "筛选条件区" },
-        { "value": "forecast_results", "label": "预测结果显示" }
-      ],
-      "mobile_account": [
-        { "value": "account_info", "label": "移动端优化的账户信息展示" },
-        { "value": "common_actions", "label": "常用操作入口" }
-      ],
-      "not_found": [
-        { "value": "error_message", "label": "错误提示信息" },
-        { "value": "home_button", "label": "返回首页按钮" },
-        { "value": "suggested_links", "label": "推荐链接" }
-      ],
-      "error_page": [
-        { "value": "error_display", "label": "错误代码/信息展示" },
-        { "value": "refresh_button", "label": "刷新按钮" },
-        { "value": "feedback_entry", "label": "反馈入口" }
+      "common_user_profile": [
+        { "value": "_entire_page_", "label": "整个页面" },
+        { "value": "basic_info", "label": "基本信息编辑区" },
+        { "value": "security_settings", "label": "安全设置区" },
+        { "value": "kyc_section", "label": "身份认证(KYC)状态/入口区" },
+        { "value": "preferences", "label": "偏好设置区" },
+        { "value": "linked_accounts", "label": "关联账户管理区" }
       ]
     },
     "componentPathHints": {
-      "login": {
-        "login_form": "app/[locale]/(auth)/login/components/LoginForm.tsx (猜测)"
-      },
-      "trading_spot": {
+      "cex_market_crypto": {
+        "_entire_page_": "app/[locale]/(dashboard)/currencies",
         "order_entry_panel": "app/[locale]/(dashboard)/(orderly)/trading/[[...slug]]/components/OrderForm.tsx (猜测)"
       },
-      "dashboard_overview": {
-        "asset_summary_card": "app/[locale]/(dashboard)/components/AssetSummary.tsx (猜测)",
-        "quick_actions_panel": "app/[locale]/(dashboard)/components/QuickActions.tsx (猜测)"
-      },
-      "community_home": {
+      "dex_farcaster": {
+        "_entire_page_": "app/[locale]/(dashboard)/(dex)/farcaster-feeds",
         "post_list": "app/[locale]/(community)/components/PostList.tsx (猜测)"
       }
     }
-  } 
+} 

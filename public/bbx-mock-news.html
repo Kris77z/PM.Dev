@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>BBX Mock News</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; }
+    .nav { background: #222; color: #fff; padding: 12px 24px; }
+    .news-list { padding: 24px; }
+    .news-item { border-bottom: 1px solid #eee; padding: 12px 0; cursor: pointer; border-radius: 8px; }
+    .pm-highlight {
+      background: #fffbe6 !important;
+      box-shadow: 0 0 0 2px #ffb300 inset, 0 4px 24px 0 rgba(255,179,0,0.15);
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+      transform: scale(1.02);
+      z-index: 10;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+  <div class="nav">BBX 快讯</div>
+  <div class="news-list">
+    <div class="news-item" id="news1">
+      <strong>BTC突破新高</strong>
+      <div>BTC 现报 $111499.90，24小时涨幅4.05%</div>
+    </div>
+    <div class="news-item" id="news2">
+      <strong>OKX 上线 xBTC</strong>
+      <div>OKX 正式上线封装比特币资产 xBTC</div>
+    </div>
+  </div>
+  <script>
+    // 高亮动效与采集
+    const highlightClass = 'pm-highlight';
+    let lastHighlight = null;
+
+    document.querySelector('.news-list').addEventListener('mouseover', (e) => {
+      const item = e.target.closest('.news-item');
+      if (!item) return;
+      if (lastHighlight && lastHighlight !== item) lastHighlight.classList.remove(highlightClass);
+      item.classList.add(highlightClass);
+      lastHighlight = item;
+    });
+    document.querySelector('.news-list').addEventListener('mouseout', (e) => {
+      const item = e.target.closest('.news-item');
+      if (!item) return;
+      item.classList.remove(highlightClass);
+      if (lastHighlight === item) lastHighlight = null;
+    });
+    document.querySelector('.news-list').addEventListener('click', (e) => {
+      const item = e.target.closest('.news-item');
+      if (!item) return;
+      const title = item.querySelector('strong')?.innerText || '';
+      const content = item.querySelector('div')?.innerText || '';
+      const domPath = 'body > .news-list > #' + item.id;
+      // 可采集更多信息
+      window.parent.postMessage({
+        type: 'element-selected',
+        payload: {
+          elementType: 'news',
+          title,
+          content,
+          domPath,
+          time: new Date().toLocaleString(),
+        }
+      }, '*');
+    });
+  </script>
+</body>
+</html>

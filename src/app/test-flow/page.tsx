@@ -4,9 +4,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { generateAllDocuments } from '@/lib/documentGenerator';
-import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock, Settings, FileText, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { FlowAnswers } from '@/types';
+import { MicroAdjustmentGuidanceUI } from '@/components/MicroAdjustmentGuidanceUI';
 
 // 定义文档类型
 type DocType = 'PRODUCT_DEFINITION' | 'TECH_STACK' | 'BACKEND_STRUCTURE' | 'FRONTEND_STRUCTURE' | 'APP_FLOW';
@@ -47,7 +48,6 @@ const documentValidationRules: Record<DocType, Array<{ key: string; aliases?: st
 };
 
 // 示例数据 - 与表单结构一致的数据对象
-// 使用正确的嵌套结构
 const sampleFlowAnswers: FlowAnswers = {
   product: {
     productName: '产品经理助手',
@@ -148,25 +148,78 @@ interface ValidationResult {
   debugInfo: string; // 添加调试信息
 }
 
+// --- 嵌入PM操作指南内容 ---
+const pmGuideContent = `
+# 如何向IDE中的AI助手请求UI微调
+
+**目标用户：** 产品经理 (PM)
+**用途：** 指导您使用"简单UI微调表单"及IDE内AI助手完成界面微调。
+**最终目标：** 您能独立完成从想法到实现的简单UI改进。
+
+**核心步骤：**
+
+1.  **准备需求 (使用表单)**
+    *   使用项目配套的"简单UI微调表单"梳理调整想法。
+    *   表单将生成一份结构化的【UI微调需求概要】。**这是关键信息。**
+
+2.  **与AI沟通 (在IDE中)**
+    *   打开IDE的AI助手对话窗口。
+    *   参考【UI微调需求概要】，向AI清晰下达指令。
+        *   **核心指令要素：** 明确意图、指定位置、描述元素、说明效果。
+        *   **推荐做法：** 若IDE支持，使用 \\\`@文件名\\\` 提及已打开的相关代码文件，能极大提升AI定位准确性。
+
+3.  **应用与验证 (AI辅助与预览)**
+    *   查看AI提供的代码修改建议 (通常是Diff格式)。
+    *   若建议符合预期，点击IDE提供的"应用"或"接受"按钮。
+    *   **务必**在本地运行项目，刷新浏览器页面，**预览实际效果**。
+
+4.  **保存修改 (确认后)**
+    *   若预览效果满意，在IDE中保存被修改的文件 (通常是 \\\`Ctrl+S\\\` 或 \\\`Cmd+S\\\`)。
+    *   (了解即可) 团队若使用Git等版本控制，后续可能需提交代码。
+
+**遇到问题怎么办？**
+
+*   **AI不理解：** 检查指令是否清晰，是否用了概要信息，尝试换种说法，或提供更多上下文（如提及关联文件）。
+*   **效果不对/页面出错：** **立即撤销修改** (\\\`Ctrl+Z\\\` / \\\`Cmd+Z\\\`)。重新审视AI的建议，或调整指令。若问题复杂，可能超出简单微调范围，请寻求开发帮助。
+*   **不确定AI建议是否安全：** 若有疑虑，**不要贸然应用**。截图或复制AI建议，咨询开发团队。
+
+**成功小贴士：**
+
+*   从最简单的调整开始。
+*   把AI看作助理，通过对话迭代需求。
+*   充分利用【UI微调需求概要】。
+*   大胆在本地尝试和预览，熟悉撤销操作。
+
+希望这份指南能帮助您更高效地参与产品迭代！
+`;
+
+// --- Sample Demand Summary for the new UI component ---
+const sampleDemandSummary = `我希望对 CEX-Market页面进行 UI 的调整，页面对应路径是app/[locale]/(dashboard)/currencies，我希望对其中的行情数据列表区域进行调整，涉及到的组件路径是app/[locale]/(dashboard)/currencies/components/CoinTable.tsx。要调整的界面元素是价格列的数字颜色，我期望的效果是将所有价格数字统一显示为绿色，调整原因是提升价格上涨的视觉辨识度。`;
+
 export default function TestFlowPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   
-  // 新增状态
   const [selectedDocument, setSelectedDocument] = useState<DocType | null>(null);
   const [documentContents, setDocumentContents] = useState<Map<DocType, string>>(new Map());
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
   const [activeTab, setActiveTab] = useState<'overview' | 'content'>('overview');
   
-  // 时间记录
   const [totalStartTime, setTotalStartTime] = useState<number | null>(null);
   const [totalEndTime, setTotalEndTime] = useState<number | null>(null);
   const [docGenerationTimes, setDocGenerationTimes] = useState<DocumentGenerationTime[]>([]);
 
-  // 新增状态
   const [showDebugInfo, setShowDebugInfo] = useState(false);
+
+  // --- 更新状态：用于显示PM操作指南 ---
+  const [pmGuideDisplayContent, setPmGuideDisplayContent] = useState<string | null>(null);
+  const [isLoadingPmGuide, setIsLoadingPmGuide] = useState(false);
+  const [pmGuideError, setPmGuideError] = useState<string | null>(null);
+
+  // --- State for the new MicroAdjustmentGuidanceUI component test ---
+  const [showNewGuidanceComponent, setShowNewGuidanceComponent] = useState(false);
 
   // 验证文档结构是否符合预期
   const validateDocument = (content: string, documentType: DocType): ValidationResult => {
@@ -259,7 +312,7 @@ export default function TestFlowPage() {
     }
   };
 
-  // 修改运行测试函数
+  // 产品文档批量生成测试函数
   const handleRunTest = async () => {
     setError(null);
     setResults([]);
@@ -385,6 +438,22 @@ export default function TestFlowPage() {
     }
   };
 
+  // --- 更新：处理PM操作指南显示的函数 ---
+  const handleDisplayPmGuide = () => {
+    setPmGuideError(null);
+    setPmGuideDisplayContent(null);
+    setIsLoadingPmGuide(true);
+    try {
+      //直接使用嵌入的pmGuideContent常量
+      setPmGuideDisplayContent(pmGuideContent);
+    } catch (e) {
+      console.error("显示PM操作指南时出错:", e);
+      setPmGuideError(`显示指南时出错: ${(e as Error).message}`);
+    } finally {
+      setIsLoadingPmGuide(false);
+    }
+  };
+
   // 计算总生成时间
   const getTotalDuration = () => {
     if (totalStartTime && totalEndTime) {
@@ -405,32 +474,100 @@ export default function TestFlowPage() {
   return (
     <div className="container mx-auto p-6">
       <header className="text-center mb-8">
-        <h1 className="text-3xl font-bold">新产品流程快速测试</h1>
+        <h1 className="text-3xl font-bold">AI辅助开发流程测试平台</h1>
         <p className="text-gray-600 mt-2">
-          使用预设的示例数据快速触发新产品流程的文档生成。
+          测试和预览产品文档的批量生成，以及查阅PM如何与AI助手协作进行UI微调的操作指南。
         </p>
       </header>
 
       <main className="max-w-4xl mx-auto">
-        <div className="bg-white p-6 rounded shadow-md mb-6">
-          <div>
-            <h2 className="text-xl font-bold mb-2">测试控制</h2>
-            <p className="text-gray-600 mb-4">
-              点击下方按钮使用示例数据生成产品文档。
-            </p>
+        {/* --- 更新：PM操作指南显示区块 --- */}
+        <div className="bg-white p-6 rounded shadow-md mb-8">
+          <div className="flex items-center mb-3">
+            <Settings className="h-6 w-6 mr-2 text-purple-600" />
+            <h2 className="text-xl font-bold">PM操作指南：如何请求UI微调</h2>
           </div>
+          <p className="text-gray-600 mb-4">
+            点击下方按钮，查阅产品经理（PM）如何与IDE中的AI助手沟通以进行UI微调的详细指南和指令模板。
+          </p>
+          <button
+            onClick={handleDisplayPmGuide}
+            disabled={isLoadingPmGuide}
+            className={`px-4 py-2 rounded ${isLoadingPmGuide ? 'bg-gray-300' : 'bg-purple-500 hover:bg-purple-600 text-white'} font-medium transition-colors w-full sm:w-auto`}
+          >
+            {isLoadingPmGuide && <span className="mr-2">⏳</span>}
+            {isLoadingPmGuide ? '正在加载指南...' : '查阅PM操作指南'}
+          </button>
+
+          {pmGuideError && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              <div className="flex items-center">
+                <AlertCircle className="h-4 w-4 mr-1" />
+                <h3 className="font-bold text-sm">错误</h3>
+              </div>
+              <p className="text-sm">{pmGuideError}</p>
+            </div>
+          )}
+
+          {pmGuideDisplayContent && (
+            <div className="mt-6 border rounded p-4 bg-gray-50">
+              <div className="flex items-center mb-2">
+                <FileText className="h-5 w-5 mr-2 text-purple-600" />
+                <h3 className="text-lg font-semibold">PM操作指南内容:</h3>
+              </div>
+              <div className="prose max-w-none prose-sm sm:prose lg:prose-lg xl:prose-xl">
+                <ReactMarkdown>{pmGuideDisplayContent}</ReactMarkdown>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* --- NEW: Test area for MicroAdjustmentGuidanceUI component --- */}
+        <div className="bg-white p-6 rounded shadow-md mb-8">
+          <div className="flex items-center mb-3">
+            <Eye className="h-6 w-6 mr-2 text-green-600" /> 
+            <h2 className="text-xl font-bold">测试新的UI微调指南组件</h2>
+          </div>
+          <p className="text-gray-600 mb-4">
+            点击下方按钮，预览将"需求概要"和"完整PM指南"结合展示的新UI组件效果。
+          </p>
+          <button
+            onClick={() => setShowNewGuidanceComponent(!showNewGuidanceComponent)}
+            className={`px-4 py-2 rounded ${showNewGuidanceComponent ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white font-medium transition-colors w-full sm:w-auto`}
+          >
+            {showNewGuidanceComponent ? '隐藏新指南组件' : '显示新指南组件'}
+          </button>
+
+          {showNewGuidanceComponent && (
+            <div className="mt-6 border-t pt-6">
+              <MicroAdjustmentGuidanceUI 
+                demandSummaryMarkdown={sampleDemandSummary} 
+                fullGuideMarkdown={pmGuideContent} 
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white p-6 rounded shadow-md mb-6">
+          <div className="flex items-center mb-3">
+            <FileText className="h-6 w-6 mr-2 text-blue-600" />
+            <h2 className="text-xl font-bold">测试产品文档批量生成</h2>
+          </div>
+          <p className="text-gray-600 mb-4">
+            点击下方按钮使用示例数据批量生成产品文档。
+          </p>
           <div className="flex justify-between items-center">
             <button 
               onClick={handleRunTest} 
               disabled={isLoading}
-              className={`px-4 py-2 rounded ${isLoading ? 'bg-gray-300' : 'bg-blue-500 hover:bg-blue-600 text-white'} font-medium transition-colors`}
+              className={`px-4 py-2 rounded ${isLoading ? 'bg-gray-300' : 'bg-blue-500 hover:bg-blue-600 text-white'} font-medium transition-colors w-full sm:w-auto`}
             >
               {isLoading && <span className="mr-2">⏳</span>}
-              {isLoading ? '正在生成文档...' : '运行快速测试'}
+              {isLoading ? '正在生成文档...' : '运行产品文档批量测试'}
             </button>
             
             {totalStartTime && totalEndTime && (
-              <div className="flex items-center gap-1 text-sm">
+              <div className="flex items-center gap-1 text-sm text-gray-600">
                 <Clock className="h-4 w-4" />
                 <span>总耗时: <strong>{getTotalDuration()}</strong> 秒</span>
               </div>
@@ -470,9 +607,9 @@ export default function TestFlowPage() {
             {activeTab === 'overview' && (
               <div className="bg-white rounded shadow-md p-4">
                 <div className="mb-4">
-                  <h2 className="text-xl font-bold">生成结果</h2>
+                  <h2 className="text-xl font-bold">批量生成结果</h2>
                   <p className="text-gray-600">
-                    成功生成了 {results.length} 个文档
+                    成功生成了 {results.length} 个产品文档
                   </p>
                 </div>
                 <div className="space-y-4">
