@@ -7,7 +7,7 @@ import ProductDefinitionForm from "@/components/ProductDefinitionForm";
 import TechnicalPlanningForm from "@/components/TechnicalPlanningForm";
 import PagePlanningForm from "@/components/PagePlanningForm";
 import OptimizationForm from "@/components/OptimizationForm";
-import AddFeatureForm from "@/components/AddFeatureForm";
+// import AddFeatureForm from "@/components/AddFeatureForm"; // 暂时隐藏
 import { SimpleUIMicroAdjustmentForm, ProjectAnalysisData } from "@/components/SimpleUIMicroAdjustmentForm";
 import { Typewriter } from "@/components/ui/typewriter";
 import { PMFeatures } from "@/components/PMFeatures"; 
@@ -22,7 +22,7 @@ import {
     GenericAnswers,
     PlannedPagesOutput,
     OptimizationAnswers,
-    AddFeatureAnswers
+    // AddFeatureAnswers // 暂时隐藏
 } from '../types';
 
 // Define Message type for chat
@@ -49,12 +49,12 @@ export type CurrentForm =
   | 'page' 
   | 'tech' 
   | 'optimizeForm' 
-  | 'addFeatureForm' 
-  | 'addFeatureTech' 
-  | 'addFeaturePage' 
+  // | 'addFeatureForm'  // 暂时隐藏
+  // | 'addFeatureTech'  // 暂时隐藏
+  // | 'addFeaturePage'  // 暂时隐藏
   | 'completed' 
   | 'optimizeCompleted' 
-  | 'addFeatureCompleted'
+  // | 'addFeatureCompleted' // 暂时隐藏
   | 'optimizeChoice'
   | 'simpleUIMicroAdjustment'
   | 'simpleUIInstructionGenerated'; // 新增状态：显示生成的UI微调指令
@@ -99,9 +99,11 @@ export default function Home() {
       setCurrentForm('product');
     } else if (mode === 'optimize') {
       setCurrentForm('optimizeChoice'); // Go to choice screen first
-    } else if (mode === 'addFeature') {
-      setCurrentForm('addFeatureForm');
     }
+    // 移除 addFeature 处理
+    // } else if (mode === 'addFeature') {
+    //   setCurrentForm('addFeatureForm');
+    // }
   };
 
   // --- Callbacks for the 'newProduct' flow ---
@@ -156,29 +158,6 @@ export default function Home() {
     console.log("Optimization Form Answers:", answers);
     setFlowAnswers(prev => ({ ...prev, optimize: answers }));
     setCurrentForm('optimizeCompleted');
-  };
-
-  // --- Callbacks for the 'addFeature' flow ---
-  const handleAddFeatureFormComplete = (answers: AddFeatureAnswers, shouldContinue: boolean) => {
-    console.log("Add Feature - Definition Answers:", answers, "Should continue:", shouldContinue);
-    setFlowAnswers(prev => ({ ...prev, addFeature: answers }));
-    if (shouldContinue) {
-        setCurrentForm('addFeatureTech'); // Move to Tech Planning for Feature
-    } else {
-        setCurrentForm('addFeatureCompleted'); // Skip to Completed state
-    }
-  };
-
-  const handleAddFeatureTechComplete = (answers: GenericAnswers) => {
-      console.log("Add Feature - Technical Planning Answers:", answers);
-      setFlowAnswers(prev => ({ ...prev, addFeatureTech: answers }));
-      setCurrentForm('addFeaturePage'); // Move to Page Planning for Feature
-  };
-
-   const handleAddFeaturePageComplete = (plannedPagesData: PlannedPagesOutput) => {
-      console.log("Add Feature - Planned Pages Data:", plannedPagesData);
-      setFlowAnswers(prev => ({ ...prev, addFeaturePage: plannedPagesData }));
-      setCurrentForm('addFeatureCompleted'); // Move to Completed state for Add Feature
   };
 
   // --- Function to generate documents using the refactored logic ---
@@ -321,26 +300,23 @@ export default function Home() {
         return <OptimizationForm onComplete={handleOptimizeFormComplete} onCancel={resetToHome} />;
 
       // Add Feature Flow Forms
-      case 'addFeatureForm':
-          return <AddFeatureForm onComplete={handleAddFeatureFormComplete} onCancel={resetToHome} />;
-      case 'addFeatureTech':
-          return <TechnicalPlanningForm onComplete={handleAddFeatureTechComplete} />;
-      case 'addFeaturePage':
-          return <PagePlanningForm onCompleteAll={handleAddFeaturePageComplete} />;
+      // case 'addFeatureForm':
+      //     return <AddFeatureForm onComplete={handleAddFeatureFormComplete} onCancel={resetToHome} />;
+      // case 'addFeatureTech':
+      //     return <TechnicalPlanningForm onComplete={handleAddFeatureTechComplete} />;
+      // case 'addFeaturePage':
+      //     return <PagePlanningForm onCompleteAll={handleAddFeaturePageComplete} />;
 
       // --- Completion States for Each Flow ---
       case 'completed': // New Product Completion
       case 'optimizeCompleted': // Optimize Completion
-      case 'addFeatureCompleted': // Add Feature Completion
+      // case 'addFeatureCompleted': // Add Feature Completion
         // Shared Completion UI (can be customized further if needed)
         let title = "规划数据收集完成！";
         let initialMessage = "准备生成规划文档。";
         if (currentForm === 'optimizeCompleted') {
             title = "优化规划数据收集完成！";
             initialMessage = "准备生成优化文档。";
-        } else if (currentForm === 'addFeatureCompleted') {
-             title = "新功能规划数据收集完成！";
-             initialMessage = "准备生成新功能文档。";
         }
 
         return (
@@ -702,10 +678,10 @@ function getSubtitle(currentForm: CurrentForm) {
       case 'optimizeForm': return '优化功能 - 定义问题与目标';
       case 'optimizeCompleted': return '优化规划数据收集完成';
       // Add Feature Flow Titles
-      case 'addFeatureForm': return '添加新功能 - 步骤 1: 定义功能与目标';
-      case 'addFeatureTech': return '添加新功能 - 步骤 2: 技术规划 (针对新功能)';
-      case 'addFeaturePage': return '添加新功能 - 步骤 3: 页面规划 (针对新功能)';
-      case 'addFeatureCompleted': return '新功能规划数据收集完成';
+      // case 'addFeatureForm': return '添加新功能 - 步骤 1: 定义功能与目标';
+      // case 'addFeatureTech': return '添加新功能 - 步骤 2: 技术规划 (针对新功能)';
+      // case 'addFeaturePage': return '添加新功能 - 步骤 3: 页面规划 (针对新功能)';
+      // case 'addFeatureCompleted': return '新功能规划数据收集完成';
       // Default Title
       default: return '';
   }

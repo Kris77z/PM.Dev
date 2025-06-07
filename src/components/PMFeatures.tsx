@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 import { 
   IconSettings, 
-  IconPlus, 
-  IconFlame 
+  IconFlame,
+  IconBrain
 } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 
 interface FeatureProps {
   title: string;
@@ -12,7 +13,9 @@ interface FeatureProps {
   onClick: () => void;
 }
 
-export function PMFeatures({ onSelect }: { onSelect: (mode: 'optimize' | 'addFeature' | 'newProduct') => void }) {
+export function PMFeatures({ onSelect }: { onSelect: (mode: 'optimize' | 'newProduct') => void }) {
+  const router = useRouter();
+
   const features = [
     {
       title: "优化已有功能/页面",
@@ -21,16 +24,16 @@ export function PMFeatures({ onSelect }: { onSelect: (mode: 'optimize' | 'addFea
       onClick: () => onSelect('optimize')
     },
     {
-      title: "添加新功能",
-      description: "在现有产品基础上，增添新的功能或页面",
-      icon: <IconPlus size={24} />,
-      onClick: () => onSelect('addFeature')
-    },
-    {
       title: "开发全新产品",
       description: "从零开始构思和规划一个全新的产品",
       icon: <IconFlame size={24} />,
       onClick: () => onSelect('newProduct')
+    },
+    {
+      title: "Ask Anything",
+      description: "专业的文档和文稿助手，帮您处理各种写作需求",
+      icon: <IconBrain size={24} />,
+      onClick: () => router.push('/ask-anything')
     }
   ];
   

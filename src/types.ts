@@ -9,7 +9,7 @@ import { PlannedPagesOutput as ImportedPlannedPagesOutput } from '@/components/P
 export type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
 
 // Define types for the overall planning mode
-export type PlanningMode = 'optimize' | 'addFeature' | 'newProduct' | null;
+export type PlanningMode = 'optimize' | 'newProduct' | null;
 
 // Define types for the current step within a mode
 export type CurrentForm =
