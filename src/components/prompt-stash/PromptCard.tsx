@@ -30,7 +30,7 @@ export function PromptCard({
     <MinimalCard 
       className={cn(
         "relative shadow-lg border border-gray-200 h-full flex flex-col p-0",
-        isActive && "ring-2 ring-blue-500"
+        isActive && "ring-2 ring-orange-500"
       )}
     >
       {/* 卡片内容 */}
@@ -52,7 +52,7 @@ export function PromptCard({
             }}
             className={cn(
               "p-2.5 rounded-lg transition-all duration-200 hover:bg-white/80 flex-shrink-0",
-              template.isFavorited ? "text-blue-500" : "text-gray-400"
+              template.isFavorited ? "text-orange-500" : "text-gray-400"
             )}
           >
             <Bookmark 
@@ -97,7 +97,7 @@ export function PromptCard({
             className={cn(
               "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ml-2 flex-shrink-0",
               isChatting
-                ? "bg-blue-500 text-white shadow-md"
+                ? "bg-orange-500 text-white shadow-md hover:bg-orange-600"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             )}
           >

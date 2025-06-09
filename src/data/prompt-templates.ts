@@ -80,12 +80,11 @@ export async function loadAllPresetTemplates(): Promise<PromptTemplate[]> {
     return cachedPresetTemplates;
   }
 
-  const [pmTemplates, cherryTemplates] = await Promise.all([
+  const [pmTemplates] = await Promise.all([
     fetchPresetTemplates('/presets/pm-assistant-templates.json'),
-    fetchPresetTemplates('/presets/cherry-studio-templates.json')
+    //fetchPresetTemplates('/presets/cherry-studio-templates.json')
   ]);
-
-  cachedPresetTemplates = [...pmTemplates, ...cherryTemplates];
+  cachedPresetTemplates = [...pmTemplates];
   return cachedPresetTemplates;
 }
 

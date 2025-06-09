@@ -8,7 +8,7 @@ import { AGENT_PROMPTS, getAgentPrompt } from "@/config/prompts";
 import { DEFAULT_MODEL } from "@/config/models";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
 import PromptStashView from "@/components/prompt-stash/PromptStashView";
-import PRDHouseViewV3 from "@/components/prd-house/PRDHouseViewV3";
+import PRDHouseViewV4 from "@/components/prd-house/PRDHouseViewV4";
 import { 
   MessageSquarePlus, 
   Clock, 
@@ -65,6 +65,7 @@ export default function AskAnythingPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
 
   // 添加视图状态
   const [activeView, setActiveView] = useState<ViewType>(viewParam);
@@ -200,7 +201,7 @@ export default function AskAnythingPage() {
     }
   };
 
-  const handleSendMessage = async (userInput: string, modelId?: string, agentType?: keyof typeof AGENT_PROMPTS) => {
+  const handleSendMessage = async (userInput: string, modelId?: string, agentType?: keyof typeof AGENT_PROMPTS, enableWebSearch?: boolean) => {
     if (!userInput.trim()) return;
 
     // 使用传入的模型ID，如果没有则使用当前选中的模型
@@ -250,7 +251,8 @@ export default function AskAnythingPage() {
         body: JSON.stringify({
           model: currentModel, // 使用当前选中的模型
           messages: messagesForApi,
-          context: systemPrompt
+          context: systemPrompt,
+          enableWebSearch: enableWebSearch || false
         }),
       });
 
@@ -596,11 +598,13 @@ export default function AskAnythingPage() {
                     <div className="flex justify-center mb-8">
                       <div className="w-full max-w-2xl">
                         <AnimatedAIInput
-                          onSendMessage={(message, modelId) => handleSendMessage(message, modelId)}
+                          onSendMessage={(message, modelId, enableWS) => handleSendMessage(message, modelId, undefined, enableWS)}
                           placeholder="What is Web3?"
                           disabled={isLoading}
                           selectedModel={selectedModel}
                           onModelChange={setSelectedModel}
+                          webSearchEnabled={webSearchEnabled}
+                          onWebSearchToggle={setWebSearchEnabled}
                         />
                       </div>
                     </div>
@@ -646,9 +650,6 @@ export default function AskAnythingPage() {
                       {/* 底部占位空间，确保最后一条消息不被遮挡 */}
                       <div className="h-32"></div>
                     </div>
-                    
-                    {/* 底部渐变遮罩 */}
-                    <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none"></div>
                   </div>
 
                   {/* 输入框区域 - 固定在底部，无分割线 */}
@@ -656,11 +657,13 @@ export default function AskAnythingPage() {
                     <div className={`transition-all duration-300 ${sidebarOpen ? 'md:ml-[300px]' : 'md:ml-[60px]'} ml-0`}>
                       <div className="max-w-2xl mx-auto px-6 py-4">
                         <AnimatedAIInput
-                          onSendMessage={(message, modelId) => handleSendMessage(message, modelId)}
+                          onSendMessage={(message, modelId, enableWS) => handleSendMessage(message, modelId, undefined, enableWS)}
                           placeholder="What is Web3?"
                           disabled={isLoading}
                           selectedModel={selectedModel}
                           onModelChange={setSelectedModel}
+                          webSearchEnabled={webSearchEnabled}
+                          onWebSearchToggle={setWebSearchEnabled}
                         />
                       </div>
                     </div>
@@ -680,7 +683,7 @@ export default function AskAnythingPage() {
           {/* PRD工具视图 */}
           {activeView === 'prd-house' && (
             <div className="flex-1 overflow-hidden -mx-6 -my-12">
-              <PRDHouseViewV3 />
+              <PRDHouseViewV4 />
             </div>
           )}
 

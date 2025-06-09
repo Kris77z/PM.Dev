@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Sparkles, Copy, Download } from 'lucide-react';
+import { FileText, Sparkles, Copy, Download, Plus, X } from 'lucide-react';
 import { Typewriter } from '@/components/ui/typewriter';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { 
   Expandable, 
   ExpandableCard, 
@@ -35,7 +37,7 @@ interface Question {
   placeholder?: string;
   hint?: string;
   isOptional?: boolean;
-  type?: 'text' | 'select' | 'input' | 'section_header';
+  type?: 'text' | 'select' | 'input' | 'section_header' | 'dynamic-user-scenarios' | 'dynamic-iteration-history' | 'ai-competitor' | 'priority-select';
   options?: string[];
   gridColumn?: string;
   isRequired?: boolean;
@@ -51,315 +53,229 @@ interface PrdChapter {
   questions: Question[];
 }
 
+// 动态记录数据结构
+interface ChangeRecord {
+  version: string;
+  modifier: string;
+  content: string;
+  reason: string;
+  date: string;
+}
+
+interface UserScenario {
+  userType: string;
+  scenario: string;
+  painPoint: string;
+}
+
+interface IterationHistory {
+  version: string;
+  date: string;
+  content: string;
+  author: string;
+}
+
 // 基于 internal prd.md 的模板结构
 const prdTemplate: PrdChapter[] = [
+  // 1. 需求介绍
   {
     id: 'c1',
     title: '需求介绍',
-    description: '明确本次迭代的基本信息和历史背景。',
+    description: '明确本次迭代的基本信息和历史背景',
     questions: [
-      { id: 'c1_business', text: '所属业务线', placeholder: '', type: 'select', options: ['AiCoin PC', 'AiCoin APP', 'AiCoin Web'] },
-      { id: 'c1_pm', text: '需求负责人', placeholder: '@张三', type: 'input' },
-      { id: 'c1_frontend', text: '前端负责人', placeholder: '@李四', type: 'input' },
-      { id: 'c1_backend', text: '后端负责人', placeholder: '@王五', type: 'input' },
-      { id: 'c1_data', text: '数据负责人', placeholder: '@赵六', type: 'input' },
-      { id: 'c1_test', text: '测试负责人', placeholder: '@孙七', type: 'input' },
-      { id: 'c1_design', text: '设计负责人', placeholder: '@周八', type: 'input' },
-      { id: 'c1_brief', text: '需求简述', placeholder: '用一句话描述本次迭代的核心目标，例如：为解决新用户注册流程复杂的问题，上线手机号一键登录功能', type: 'input' },
-      { id: 'c1_history', text: '变更记录', placeholder: '版本：0.1\n修订人：@xxx\n修订内容：\n修订原因：\n日期：' }
-    ]
-  },
-  {
-    id: 'c2',
-    title: '需求分析',
-    description: '深入探究需求的背景、用户价值和目标。',
-    questions: [
-      // 用户使用场景分析 - 采用结构化布局
       { 
-        id: 'c2_user_scenarios_section', 
-        text: '用户使用场景分析', 
+        id: 'c1_business_line', 
+        text: '所属业务线', 
         placeholder: '', 
-        type: 'section_header'
+        type: 'select',
+        options: ['AiCoin PC', 'AiCoin APP', 'AiCoin Web'],
+        gridColumn: 'col-span-2',
+        isRequired: true
       },
       { 
-        id: 'c2_user_type_1', 
-        text: '用户类型1', 
-        placeholder: '例如：新手用户', 
+        id: 'c1_pm', 
+        text: '需求负责人', 
+        placeholder: '@张三', 
         type: 'input',
         gridColumn: 'col-span-1',
         isRequired: true
       },
       { 
-        id: 'c2_scenario_1', 
-        text: '使用场景1', 
-        placeholder: '例如：第一次使用该功能', 
+        id: 'c1_frontend', 
+        text: '前端', 
+        placeholder: '@李四', 
         type: 'input',
         gridColumn: 'col-span-1',
         isRequired: true
       },
       { 
-        id: 'c2_pain_point_1', 
-        text: '具体痛点1', 
-        placeholder: '例如：不知道从哪里开始使用，功能入口分散', 
-        type: 'input',
-        gridColumn: 'col-span-2',
-        isRequired: true
-      },
-      { 
-        id: 'c2_user_type_2', 
-        text: '用户类型2', 
-        placeholder: '例如：普通用户', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isOptional: true 
-      },
-      { 
-        id: 'c2_scenario_2', 
-        text: '使用场景2', 
-        placeholder: '例如：日常使用推荐参数', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isOptional: true 
-      },
-      { 
-        id: 'c2_pain_point_2', 
-        text: '具体痛点2', 
-        placeholder: '例如：推荐参数不合理，效果不理想', 
-        type: 'input',
-        gridColumn: 'col-span-2',
-        isOptional: true 
-      },
-      
-      // 需求目标设定 - 添加AI协作功能
-      { 
-        id: 'c2_goals_section', 
-        text: '需求目标设定', 
-        placeholder: '', 
-        type: 'section_header'
-      },
-      { 
-        id: 'c2_goal_brief', 
-        text: '核心目标描述', 
-        placeholder: '例如：提升新用户使用成功率，减少操作复杂度', 
-        type: 'input',
-        gridColumn: 'col-span-2',
-        isRequired: true,
-        hasAI: true,
-        aiPrompt: '基于这个核心目标，生成详细的主要目标、次要目标和可量化指标'
-      },
-      { 
-        id: 'c2_goal_primary', 
-        text: '主要目标', 
-        placeholder: '例如：提升新用户首次使用成功率至80%', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isAIGenerated: true
-      },
-      { 
-        id: 'c2_goal_secondary', 
-        text: '次要目标', 
-        placeholder: '例如：降低用户操作步骤从5步减少到3步', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isAIGenerated: true
-      },
-      { 
-        id: 'c2_goal_metrics', 
-        text: '可量化指标', 
-        placeholder: '例如：提升功能使用率15%，降低客服咨询量20%', 
-        type: 'input',
-        gridColumn: 'col-span-2',
-        isAIGenerated: true
-      }
-    ]
-  },
-  {
-    id: 'c3',
-    title: '竞品分析',
-    description: '分析市场上的竞争者，借鉴其优缺点。',
-    questions: [
-      // 竞品对比分析 - 结构化布局
-      { 
-        id: 'c3_competitor_analysis_section', 
-        text: '竞品对比分析', 
-        placeholder: '', 
-        type: 'section_header'
-      },
-      { 
-        id: 'c3_competitor_1_name', 
-        text: '竞品1名称', 
-        placeholder: '例如：微信', 
+        id: 'c1_backend', 
+        text: '后端', 
+        placeholder: '@王五', 
         type: 'input',
         gridColumn: 'col-span-1',
         isRequired: true
       },
       { 
-        id: 'c3_competitor_1_feature', 
-        text: '竞品1核心特性', 
-        placeholder: '例如：一键转发、多群同步、消息撤回', 
+        id: 'c1_data', 
+        text: '数据', 
+        placeholder: '@赵六', 
         type: 'input',
         gridColumn: 'col-span-1',
         isRequired: true
       },
       { 
-        id: 'c3_competitor_1_ux', 
-        text: '竞品1用户体验', 
-        placeholder: '例如：操作简单直观，但功能入口较深', 
-        type: 'input',
+        id: 'c1_requirement_intro', 
+        text: '需求介绍', 
+        placeholder: '请详细描述本次迭代的需求背景、目标和预期效果...',
         gridColumn: 'col-span-2',
         isRequired: true
       },
       { 
-        id: 'c3_competitor_2_name', 
-        text: '竞品2名称', 
-        placeholder: '例如：钉钉', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isOptional: true 
-      },
-      { 
-        id: 'c3_competitor_2_feature', 
-        text: '竞品2核心特性', 
-        placeholder: '例如：审批流程、已读回执、群公告', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isOptional: true 
-      },
-      { 
-        id: 'c3_competitor_2_ux', 
-        text: '竞品2用户体验', 
-        placeholder: '例如：功能丰富但学习成本较高', 
-        type: 'input',
-        gridColumn: 'col-span-2',
-        isOptional: true 
-      },
-      
-      // SWOT分析 - 添加AI协作功能
-      { 
-        id: 'c3_swot_section', 
-        text: 'SWOT 分析', 
-        placeholder: '', 
-        type: 'section_header'
-      },
-      { 
-        id: 'c3_swot_brief', 
-        text: '分析背景', 
-        placeholder: '例如：在即时通讯领域，我们需要分析自身相对竞品的优劣势', 
-        type: 'input',
-        gridColumn: 'col-span-2',
-        isRequired: true,
-        hasAI: true,
-        aiPrompt: '基于这个分析背景，生成详细的SWOT分析内容'
-      },
-      { 
-        id: 'c3_our_strength', 
-        text: '我们的优势(S)', 
-        placeholder: '例如：技术领先、用户基础大、品牌知名度高', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isAIGenerated: true
-      },
-      { 
-        id: 'c3_our_weakness', 
-        text: '我们的劣势(W)', 
-        placeholder: '例如：功能相对简单、缺乏差异化特性', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isAIGenerated: true
-      },
-      { 
-        id: 'c3_opportunities', 
-        text: '市场机会(O)', 
-        placeholder: '例如：用户对隐私保护需求增加、新兴市场待开发', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isAIGenerated: true
-      },
-      { 
-        id: 'c3_threats', 
-        text: '潜在威胁(T)', 
-        placeholder: '例如：竞品快速迭代、新入局者技术颠覆', 
-        type: 'input',
-        gridColumn: 'col-span-1',
-        isAIGenerated: true
-      },
-      { 
-        id: 'c3_improvement_suggestions', 
-        text: '改进建议', 
-        placeholder: '基于以上分析，提出我们产品的具体优化建议和差异化机会...',
+        id: 'c1_change_records', 
+        text: '变更记录', 
+        placeholder: '变更记录将通过动态添加功能管理',
         gridColumn: 'col-span-2'
       }
     ]
   },
+  
+  // 2. 需求分析
+  {
+    id: 'c2',
+    title: '需求分析',
+    description: '深入探究需求的背景、用户价值和目标',
+    questions: [
+      { 
+        id: 'c2_user_scenarios', 
+        text: '用户使用场景', 
+        placeholder: '用户场景将通过动态添加功能管理，包含用户类型、使用场景、痛点分析',
+        gridColumn: 'col-span-2',
+        type: 'dynamic-user-scenarios'
+      },
+      { 
+        id: 'c2_requirement_goal', 
+        text: '需求目标', 
+        placeholder: '基于上述用户场景，明确我们要针对哪类用户，解决什么痛点，通过什么方式解决，达到什么效果...',
+        gridColumn: 'col-span-2',
+        isRequired: true
+      }
+    ]
+  },
+  
+  // 3. 竞品分析
+  {
+    id: 'c3',
+    title: '竞品分析',
+    description: '分析市场上的竞争者，借鉴其优缺点',
+    questions: [
+      { 
+        id: 'c3_competitor_analysis', 
+        text: '竞品分析', 
+        placeholder: '点击AI找竞品按钮，让AI为您分析相关竞品的功能特点、优劣势和改进建议...',
+        gridColumn: 'col-span-2',
+        hasAI: true,
+        type: 'ai-competitor'
+      }
+    ]
+  },
+  
+  // 4. 需求方案
   {
     id: 'c4',
     title: '需求方案',
-    description: '具体描述为实现需求所设计的功能和逻辑。',
+    description: '详细的方案设计和实现规划',
     questions: [
       { 
-        id: 'c4_overview', 
-        text: '需求概览', 
-        placeholder: '设立优先级标准：High（紧急）、Middle（一般）、Low（灵活）\n\n对应2.2需求目标，简要说明是个设计或逻辑想法如何解决痛点或达成目标的\n\n不涉及到规则和数据需求的对应部分可省略\n\n需求 | 功能点/流程 | 业务逻辑/规则说明 | 数据需求/校验 | 特殊状态/边缘处理 | 组件库使用 | 解决用户痛点 | 对应模块 | 优先级\n...' 
+        id: 'c4_requirement', 
+        text: '需求', 
+        placeholder: '简要描述核心需求',
+        type: 'input',
+        gridColumn: 'col-span-2',
+        isRequired: true
       },
       { 
-        id: 'c4_figma_link', 
-        text: 'Figma原型链接', 
-        placeholder: 'https://figma.com/file/...', 
-        type: 'input' 
+        id: 'c4_features', 
+        text: '功能点/流程', 
+        placeholder: '主要功能点和操作流程',
+        type: 'input',
+        gridColumn: 'col-span-2',
+        isRequired: true
       },
       { 
-        id: 'c4_prototype_desc', 
-        text: '原型说明', 
-        placeholder: '简要描述界面流程和关键交互，或贴入关键界面截图说明' 
+        id: 'c4_business_logic', 
+        text: '业务逻辑/规则说明', 
+        placeholder: '详细的业务规则和逻辑说明...',
+        gridColumn: 'col-span-2'
       },
       { 
-        id: 'c4_acceptance', 
-        text: '验收情况', 
-        placeholder: '根据当前需求必须完成的功能和用户体验方面的验收要求\n\n需求分给相关人员并发流程化JAD人员需要同步填写验收标准，由产品经理一步完成PRD文档中，时间是其他\n\n相应验收标准下方提取与验收标准力为公式。基线、优化，用以判断bug是否当前版本一定要修复\n\n等级验收进度说明：\n\n必过 | 核心业务流程 | 具体验收标准 | 验收方法/工具 | 验收责任通过\n基线 | 基础功能可用性 | 具体标准 | 方法 | 责任人\n优化 | 体验增项 | 具体标准 | 方法 | 责任人' 
+        id: 'c4_data_requirements', 
+        text: '数据需求/校验', 
+        placeholder: '数据结构、校验规则、存储要求等...',
+        gridColumn: 'col-span-2'
+      },
+      { 
+        id: 'c4_edge_cases', 
+        text: '特殊状态/边缘处理', 
+        placeholder: '异常情况、边缘场景的处理方案...',
+        gridColumn: 'col-span-2'
+      },
+      { 
+        id: 'c4_pain_points', 
+        text: '解决用户痛点', 
+        placeholder: '说明此方案如何解决用户的具体痛点...',
+        gridColumn: 'col-span-2',
+        isRequired: true
+      },
+      { 
+        id: 'c4_modules', 
+        text: '对应模块', 
+        placeholder: '涉及的系统模块、组件等...',
+        gridColumn: 'col-span-2'
+      },
+      { 
+        id: 'c4_priority', 
+        text: '优先级', 
+        placeholder: '',
+        type: 'priority-select',
+        gridColumn: 'col-span-2',
+        isRequired: true
+      },
+      { 
+        id: 'c4_prototype', 
+        text: '界面原型', 
+        placeholder: 'Figma链接：https://www.figma.com/...',
+        type: 'input',
+        gridColumn: 'col-span-2'
       },
       { 
         id: 'c4_open_issues', 
         text: '开放问题/待定决策', 
-        placeholder: '用于记录讨论中尚未明确，需要后续跟进或已做出但需要记录的重要决策点' 
+        placeholder: '尚未确定的问题、需要进一步讨论的决策点...',
+        gridColumn: 'col-span-2'
       }
     ]
   },
+  
+  // 5. 其余事项
   {
     id: 'c5',
     title: '其余事项',
-    description: '相关文档和迭代历史记录。',
+    description: '相关文档和历史记录',
     questions: [
       { 
-        id: 'c5_competitor_report', 
-        text: '竞品清单链接', 
-        placeholder: 'https://docs.google.com/spreadsheets/...', 
-        type: 'input',
-        isOptional: true 
-      },
-      { 
-        id: 'c5_data_report', 
-        text: '数据分析报告链接', 
-        placeholder: 'https://analytics.example.com/...', 
-        type: 'input',
-        isOptional: true 
-      },
-      { 
-        id: 'c5_user_research', 
-        text: '用户调研报告链接', 
-        placeholder: 'https://user-research.example.com/...', 
-        type: 'input',
-        isOptional: true 
-      },
-      { 
         id: 'c5_other_docs', 
-        text: '其他相关文档', 
-        placeholder: '其他需要说明的文档链接或描述...',
-        isOptional: true 
+        text: '其余文档链接', 
+        placeholder: '相关报告、设计文档等链接...',
+        type: 'input',
+        gridColumn: 'col-span-2'
       },
       { 
-        id: 'c5_history', 
+        id: 'c5_iteration_history', 
         text: '功能迭代历史', 
-        placeholder: '版本号 | 需求文档 | 主要变更/优化内容 | 负责PM | 日期\nV1.0 | | 首次上线核心网格交易功能 | | 2025.04.21\n...' 
+        placeholder: '功能迭代历史将通过动态添加功能管理，包含版本、负责人、发布日期、迭代内容',
+        gridColumn: 'col-span-2',
+        type: 'dynamic-iteration-history'
       }
     ]
   }
@@ -370,6 +286,17 @@ export default function PRDHouseViewV4() {
   const [chapters] = useState<PrdChapter[]>(prdTemplate);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+  
+  // 动态记录状态
+  const [changeRecords, setChangeRecords] = useState<ChangeRecord[]>([
+    { version: '0.1', modifier: '@xxx', content: '', reason: '', date: new Date().toISOString().split('T')[0] }
+  ]);
+  const [userScenarios, setUserScenarios] = useState<UserScenario[]>([
+    { userType: '', scenario: '', painPoint: '' }
+  ]);
+  const [iterationHistory, setIterationHistory] = useState<IterationHistory[]>([
+    { version: '0.1', date: new Date().toISOString().split('T')[0], content: '', author: '@xxx' }
+  ]);
   
   const { completion, handleSubmit, isLoading } = useCompletion({
     api: '/api/generate-prd',
@@ -385,9 +312,9 @@ export default function PRDHouseViewV4() {
   const [startFadeOut, setStartFadeOut] = useState(false);
 
   const welcomeTexts = [
-    "你好！我是你的专属产品顾问 🌟",
-    "我们将依据团队标准模板，撰写一份迭代PRD",
-    "让我们开始吧..."
+    "听说你又要写 PRD 了",
+    "没事哒没事哒",
+    "时间差不多咯..."
   ];
 
   // 监听typewriter动画完成
@@ -434,6 +361,74 @@ export default function PRDHouseViewV4() {
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
+
+  // 变更记录管理
+  const addChangeRecord = () => {
+    setChangeRecords(prev => [...prev, { 
+      version: `0.${prev.length + 1}`, 
+      modifier: '@xxx', 
+      content: '', 
+      reason: '', 
+      date: new Date().toISOString().split('T')[0] 
+    }]);
+  };
+
+  const removeChangeRecord = (index: number) => {
+    if (changeRecords.length > 1) {
+      setChangeRecords(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateChangeRecord = (index: number, field: keyof ChangeRecord, value: string) => {
+    setChangeRecords(prev => 
+      prev.map((record, i) => 
+        i === index ? { ...record, [field]: value } : record
+      )
+    );
+  };
+
+  // 用户场景管理
+  const addUserScenario = () => {
+    setUserScenarios(prev => [...prev, { userType: '', scenario: '', painPoint: '' }]);
+  };
+
+  const removeUserScenario = (index: number) => {
+    if (userScenarios.length > 1) {
+      setUserScenarios(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateUserScenario = (index: number, field: keyof UserScenario, value: string) => {
+    setUserScenarios(prev => 
+      prev.map((scenario, i) => 
+        i === index ? { ...scenario, [field]: value } : scenario
+      )
+    );
+  };
+
+  // 功能迭代历史管理
+  const addIterationHistory = () => {
+    setIterationHistory(prev => [...prev, { 
+      version: `0.${prev.length + 1}`, 
+      date: new Date().toISOString().split('T')[0], 
+      content: '', 
+      author: '@xxx' 
+    }]);
+  };
+
+  const removeIterationHistory = (index: number) => {
+    if (iterationHistory.length > 1) {
+      setIterationHistory(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateIterationHistory = (index: number, field: keyof IterationHistory, value: string) => {
+    setIterationHistory(prev => 
+      prev.map((history, i) => 
+        i === index ? { ...history, [field]: value } : history
+      )
+    );
+  };
   
   const generatePRD = (e: React.FormEvent<HTMLFormElement>) => {
     setWorkflowStage('generating');
@@ -477,7 +472,13 @@ export default function PRDHouseViewV4() {
   const isCurrentChapterComplete = () => {
     const currentChapter = chapters[currentChapterIndex];
     return currentChapter.questions.every(q => {
-      if (q.isOptional) return true;
+      // 如果是可选的或者没有标记为必填，跳过检查
+      if (q.isOptional || !q.isRequired) return true;
+      
+      // 对于特殊的动态组件，有默认值的话就认为已填写
+      if (q.id === 'c1_change_records' || q.id === 'c5_iteration_history') return true;
+      if (q.type === 'dynamic-user-scenarios') return true;
+      
       const answer = answers[q.id] || '';
       return answer.trim() !== '';
     });
@@ -488,6 +489,386 @@ export default function PRDHouseViewV4() {
     const currentChapter = chapters[currentChapterIndex];
     const isLastChapter = currentChapterIndex === chapters.length - 1;
     const isComplete = isCurrentChapterComplete();
+    
+    // 统一样式类名 - 去掉蓝色边框
+    const inputClassName = "border-gray-300";
+    const textareaClassName = "border-gray-300";
+
+    const renderQuestionInput = (question: Question) => {
+      // 业务线选择
+      if (question.type === 'select') {
+        return (
+          <div>
+            <Label className="block text-md font-medium text-gray-700 mb-3">
+              {question.text} {question.isRequired && <span className="text-red-500">*</span>}
+            </Label>
+            <div className="flex flex-wrap gap-6">
+              {question.options?.map((option) => (
+                <label key={option} className="flex items-center space-x-3 cursor-pointer">
+                  <Checkbox 
+                    id={`${question.id}-${option}`}
+                    checked={answers[question.id] === option}
+                    onCheckedChange={() => handleAnswerChange(question.id, option)}
+                    className="border-gray-400"
+                  />
+                  <span className="text-base">{option}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // 优先级选择
+      if (question.type === 'priority-select') {
+        return (
+          <div>
+            <Label className="block text-md font-medium text-gray-700 mb-3">
+              {question.text} {question.isRequired && <span className="text-red-500">*</span>}
+            </Label>
+            <div className="flex flex-wrap gap-6">
+              {['High', 'Middle', 'Low'].map((priority) => (
+                <label key={priority} className="flex items-center space-x-3 cursor-pointer">
+                  <Checkbox 
+                    checked={answers[question.id] === priority}
+                    onCheckedChange={() => handleAnswerChange(question.id, priority)}
+                    className="border-gray-400"
+                  />
+                  <span className="text-base">{priority}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // 变更记录动态组件
+      if (question.id === 'c1_change_records') {
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-md font-medium text-gray-700">变更记录</Label>
+              <Button
+                onClick={addChangeRecord}
+                size="sm"
+                variant="outline"
+                className="border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                添加记录
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {changeRecords.map((record, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-gray-700">变更记录 #{index + 1}</h4>
+                    {changeRecords.length > 1 && (
+                      <Button
+                        onClick={() => removeChangeRecord(index)}
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">版本</Label>
+                      <Input
+                        value={record.version}
+                        onChange={(e) => updateChangeRecord(index, 'version', e.target.value)}
+                        placeholder="0.1"
+                        className={`${inputClassName} text-sm`}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">修订人</Label>
+                      <Input
+                        value={record.modifier}
+                        onChange={(e) => updateChangeRecord(index, 'modifier', e.target.value)}
+                        placeholder="@xxx"
+                        className={`${inputClassName} text-sm`}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">修订日期</Label>
+                      <Input
+                        value={record.date}
+                        onChange={(e) => updateChangeRecord(index, 'date', e.target.value)}
+                        placeholder="2025-06-08"
+                        className={`${inputClassName} text-sm`}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">修订原因</Label>
+                      <Input
+                        value={record.reason}
+                        onChange={(e) => updateChangeRecord(index, 'reason', e.target.value)}
+                        placeholder="功能优化"
+                        className={`${inputClassName} text-sm`}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs text-gray-600 mb-1 block">修订内容</Label>
+                      <Textarea
+                        value={record.content}
+                        onChange={(e) => updateChangeRecord(index, 'content', e.target.value)}
+                        rows={2}
+                        placeholder="描述本次修订的具体内容..."
+                        className={`${textareaClassName} text-sm`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // 用户场景动态组件
+      if (question.type === 'dynamic-user-scenarios') {
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-md font-medium text-gray-700">用户使用场景</Label>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {/* AI扩展功能 */}}
+                  size="sm"
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  AI扩展
+                </Button>
+                <Button
+                  onClick={addUserScenario}
+                  size="sm"
+                  variant="outline"
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  添加用户
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              {userScenarios.map((scenario, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-gray-700">用户场景 #{index + 1}</h4>
+                    {userScenarios.length > 1 && (
+                      <Button
+                        onClick={() => removeUserScenario(index)}
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">用户类型</Label>
+                      <Input
+                        value={scenario.userType}
+                        onChange={(e) => updateUserScenario(index, 'userType', e.target.value)}
+                        placeholder="如：新用户、活跃用户、企业用户..."
+                        className={`${inputClassName} text-sm`}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">使用场景</Label>
+                      <Textarea
+                        value={scenario.scenario}
+                        onChange={(e) => updateUserScenario(index, 'scenario', e.target.value)}
+                        rows={2}
+                        placeholder="详细描述用户在什么情况下会使用这个功能..."
+                        className={`${textareaClassName} text-sm`}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">痛点分析</Label>
+                      <Textarea
+                        value={scenario.painPoint}
+                        onChange={(e) => updateUserScenario(index, 'painPoint', e.target.value)}
+                        rows={2}
+                        placeholder="用户在当前情况下遇到的问题和困难..."
+                        className={`${textareaClassName} text-sm`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // 功能迭代历史动态组件
+      if (question.type === 'dynamic-iteration-history') {
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-md font-medium text-gray-700">功能迭代历史</Label>
+              <Button
+                onClick={addIterationHistory}
+                size="sm"
+                variant="outline"
+                className="border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                添加记录
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {iterationHistory.map((history, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-gray-700">迭代记录 #{index + 1}</h4>
+                    {iterationHistory.length > 1 && (
+                      <Button
+                        onClick={() => removeIterationHistory(index)}
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-xs text-gray-600 mb-1 block">版本</Label>
+                        <Input
+                          value={history.version}
+                          onChange={(e) => updateIterationHistory(index, 'version', e.target.value)}
+                          placeholder="v1.0"
+                          className={`${inputClassName} text-sm`}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600 mb-1 block">负责人</Label>
+                        <Input
+                          value={history.author}
+                          onChange={(e) => updateIterationHistory(index, 'author', e.target.value)}
+                          placeholder="@xxx"
+                          className={`${inputClassName} text-sm`}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600 mb-1 block">发布日期</Label>
+                        <Input
+                          value={history.date}
+                          onChange={(e) => updateIterationHistory(index, 'date', e.target.value)}
+                          placeholder="2025-06-08"
+                          className={`${inputClassName} text-sm`}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-600 mb-1 block">迭代内容</Label>
+                      <Textarea
+                        value={history.content}
+                        onChange={(e) => updateIterationHistory(index, 'content', e.target.value)}
+                        rows={2}
+                        placeholder="描述本次迭代的主要功能和改进..."
+                        className={`${textareaClassName} text-sm`}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // AI竞品分析
+      if (question.type === 'ai-competitor') {
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-md font-medium text-gray-700">竞品分析</Label>
+              <Button
+                onClick={() => {/* AI找竞品功能 */}}
+                size="sm"
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                AI找竞品
+              </Button>
+            </div>
+            
+            <Textarea
+              value={answers[question.id] || ''}
+              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+              placeholder={question.placeholder}
+              rows={8}
+              className={textareaClassName}
+            />
+          </div>
+        );
+      }
+
+      // Input类型
+      if (question.type === 'input') {
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-md font-medium text-gray-700">
+                {question.text} 
+                {question.isRequired && <span className="text-red-500">*</span>}
+                {question.isOptional && <span className="text-gray-400">(可选)</span>}
+              </Label>
+            </div>
+            
+            <Input
+              value={answers[question.id] || ''}
+              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+              placeholder={question.placeholder}
+              className={inputClassName}
+            />
+          </div>
+        );
+      }
+
+      // 默认为textarea
+      return (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <Label className="text-md font-medium text-gray-700">
+              {question.text} 
+              {question.isRequired && <span className="text-red-500">*</span>}
+              {question.isOptional && <span className="text-gray-400">(可选)</span>}
+            </Label>
+          </div>
+          
+          <Textarea
+            value={answers[question.id] || ''}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            placeholder={question.placeholder}
+            rows={4}
+            className={textareaClassName}
+          />
+          
+          {question.hint && (
+            <p className="text-xs text-gray-500 mt-1">{question.hint}</p>
+          )}
+        </div>
+      );
+    };
     
     return (
       <div className="w-full max-w-4xl mx-auto py-12 flex flex-col items-center justify-center animate-card-appear" style={{ minHeight: '80vh' }}>
@@ -546,96 +927,47 @@ export default function PRDHouseViewV4() {
               </ExpandableTrigger>
               
               <ExpandableContent preset="fade" stagger staggerChildren={0.1}>
-                <ExpandableCardContent>
-                  <div className="space-y-4 pt-4">
-                    {currentChapter.questions.map(q => (
-                      <div key={q.id}>
-                        <Label className="block text-md font-medium text-gray-700 mb-2">
-                          {q.text}
-                          {q.isOptional && <span className="text-sm font-normal text-gray-500 ml-1">(选填)</span>}
-                          {!q.isOptional && <span className="text-red-500 ml-1">*</span>}
-                        </Label>
-{q.type === 'select' && q.options ? (
-                          <div className="flex flex-wrap gap-6">
-                            {q.options.map((option) => (
-                              <Label key={option} className="flex items-center space-x-3 cursor-pointer">
-                                <Checkbox 
-                                  id={`option-${q.id}-${option}`}
-                                  checked={answers[q.id] === option}
-                                  onCheckedChange={() => handleAnswerChange(q.id, option)}
-                                  className="border-orange-400 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
-                                />
-                                <span className="text-base">{option}</span>
-                              </Label>
-                            ))}
-                          </div>
-                        ) : q.type === 'input' ? (
-                          <Input
-                            type="text"
-                            value={answers[q.id] || ''}
-                            onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                            className="focus:ring-orange-500/20 focus-visible:border-orange-500"
-                            placeholder={q.placeholder}
-                            disabled={isLoading}
-                            onClick={(e) => e.stopPropagation()}
-                            onFocus={(e) => e.stopPropagation()}
-                          />
-                        ) : (
-                          <textarea
-                            value={answers[q.id] || ''}
-                            onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                            rows={q.id.includes('logic') ? 8 : 4}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 resize-y"
-                            placeholder={q.placeholder}
-                            disabled={isLoading}
-                            onClick={(e) => e.stopPropagation()}
-                            onFocus={(e) => e.stopPropagation()}
-                          />
-                        )}
-                        {q.hint && <p className="text-sm text-gray-500 mt-2">{q.hint}</p>}
-                      </div>
-                    ))}
+                <ExpandableCardContent className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+                  <div className="pt-4 pb-2">
+                    <div className="grid grid-cols-2 gap-6 pr-2">
+                      {currentChapter.questions.map(question => (
+                        <div key={question.id} className={question.gridColumn || 'col-span-1'}>
+                          {renderQuestionInput(question)}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </ExpandableCardContent>
                 
                 <ExpandableCardFooter>
-                  <div className="flex items-center gap-6 w-full pt-4">
-                    <button
-                      onClick={handlePreviousChapter}
-                      disabled={currentChapterIndex === 0 || isLoading}
-                      className="py-2 px-4 border border-gray-300 text-gray-700 font-semibold rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                  <div className="flex items-center justify-between w-full pt-4">
+                    <Button variant="outline" className="border-gray-300" onClick={handlePreviousChapter} disabled={currentChapterIndex === 0 || isLoading}>
                       上一步
-                    </button>
-
+                    </Button>
                     {isLastChapter ? (
-                      <form onSubmit={generatePRD} className="flex-1">
-                        <button
+                      <form onSubmit={generatePRD} className="flex-1 ml-4">
+                        <Button
                           type="submit"
                           disabled={isLoading || !isComplete}
-                          className="w-full py-2 px-4 bg-orange-500 text-white font-semibold rounded-md shadow hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                         >
                           {isLoading ? (
                             <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                               生成文档中...
                             </>
                           ) : (
                             <>
-                              <Sparkles className="h-4 w-4" />
+                              <Sparkles className="h-4 w-4 mr-2" />
                               AI 生成完整文档
                             </>
                           )}
-                        </button>
+                        </Button>
                       </form>
                     ) : (
-                      <button
-                        onClick={handleNextChapter}
-                        disabled={isLoading || !isComplete}
-                        className="flex-1 py-2 px-4 bg-orange-500 text-white font-semibold rounded-md shadow hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                      >
+                      <Button className="bg-orange-500 hover:bg-orange-600" onClick={handleNextChapter} disabled={isLoading || !isComplete}>
                         下一步
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </ExpandableCardFooter>
@@ -711,7 +1043,7 @@ export default function PRDHouseViewV4() {
         {workflowStage === 'welcome' && showStartScreen && (
           <div className="flex flex-col items-center justify-center h-screen">
             <div className="text-center space-y-12 max-w-2xl">
-              <h1 className="text-6xl font-normal text-black">又来写 PRD 啦？</h1>
+              <h1 className="text-6xl font-normal text-black">PRD GAME START</h1>
               <div className="flex justify-center">
                 <button
                   onClick={handleStartClick}
@@ -763,6 +1095,22 @@ export default function PRDHouseViewV4() {
           }
           .animate-card-appear {
             animation: card-appear 0.6s ease-out forwards;
+          }
+
+          /* 自定义滚动条样式 */
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
           }
           
           .btn-class-name {

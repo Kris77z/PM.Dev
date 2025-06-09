@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, Sparkles, Users, Calendar, User } from 'lucide-react';
+import { FileText, Sparkles } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,10 +38,7 @@ interface ChangeRecord {
   date: string;
 }
 
-interface RequirementIntro {
-  basicInfo: RequirementBasicInfo;
-  changeRecords: ChangeRecord[];
-}
+
 
 // 初始数据
 const initialBasicInfo: RequirementBasicInfo = {

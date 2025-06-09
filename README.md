@@ -1,257 +1,69 @@
-# PM Assistant - AI驱动的产品经理助手
+# PM Assistant - 智能产品需求文档助手
 
-## 项目愿景
+这是一个基于AI的产品需求文档(PRD)智能编写助手，帮助产品经理快速、高效地创建专业的PRD文档。
 
-打造一个基于AI的产品开发助手，帮助产品经理从0到1实现产品落地，降低技术门槛，实现从需求到上线的全流程支持。
+## 🚀 主要功能
 
-## 核心特点
+### 1. 智能PRD编写
+- **结构化表单**：按章节组织的PRD模板，确保内容完整性
+- **实时验证**：自动检查必填字段和内容质量
+- **动态管理**：支持变更记录、用户场景、迭代历史的动态添加和管理
 
-* 基于自然语言对话的产品开发流程
-* **多模型AI支持** - 集成5个主流AI模型
-* AI辅助文档生成系统
-* 保留关键节点的人工干预
-* 完整的文档体系支持
-* UI微调指令生成工具
+### 2. AI助手功能 🤖
 
-## 🤖 支持的AI模型
+#### 🔍 用户场景AI扩展
+- **功能**：基于需求介绍，自动生成多个用户使用场景
+- **输入**：需求介绍内容
+- **输出**：包含用户类型、使用场景、痛点分析的结构化数据
+- **用途**：帮助产品经理全面理解用户需求，避免场景遗漏
 
-### 当前可用模型
+#### 🌐 智能竞品分析
+- **功能**：使用AI模型的内置联网搜索技术，分析市面上相关产品竞品
+- **技术**：基于GPT-4o、Claude 3.5、Gemini 2.0的原生网络搜索能力
+- **输出**：详细的竞品调研报告，包括功能对比、优劣势分析、机会点识别
+- **用途**：为产品决策提供市场洞察和竞争情报
 
-| 模型 | 提供商 | 状态 | 说明 |
-|------|--------|------|------|
-| **GPT-4o** | OpenAI代理 | ✅ 正常 | 通过代理服务访问 |
-| **Claude 3.5 Sonnet** | Anthropic代理 | ❌ 需要更新密钥 | API密钥无效 |
-| **Gemini 2.0 Flash** | Google官方 | ✅ 正常 | 通过代理访问，支持中文 |
-| **DeepSeek R1** | OpenRouter | ✅ 正常 | 响应速度较慢但稳定 |
+#### ✅ 内容质量审查
+- **功能**：AI审查PRD内容的完整性和质量
+- **评估维度**：
+  - 完整性检查（必填字段、关键信息）
+  - 质量评估（描述清晰度、方案完善性）
+  - 逻辑一致性（内容一致性、逻辑关系）
+  - 专业程度（符合PRD标准、表达专业性）
+- **输出**：0-100分评分、问题清单、改进建议
+- **用途**：确保PRD质量，减少返工
 
-### 模型配置说明
+#### 📄 智能PRD生成
+- **功能**：基于填写的所有数据，生成完整的Markdown格式PRD文档
+- **包含**：项目信息、需求分析、竞品分析、方案设计、实施计划等完整章节
+- **特点**：结构清晰、内容详实、格式专业
+- **导出**：支持复制到剪贴板和下载为.md文件
 
-#### Gemini 2.0 Flash
-- **优势**: 免费使用，响应速度快(~3秒)，支持中文对话
-- **技术实现**: 使用undici代理突破网络限制
-- **注意**: Gemini 2.5 Pro Preview无免费配额，已从配置中移除
+## 🛠 技术架构
 
-#### 网络代理配置
-- **开发环境**: 自动使用127.0.0.1:7890代理访问Google服务
-- **生产环境**: 需要配置相应的网络访问方案
-- **代理技术**: 使用undici库实现可靠的代理连接
+### 前端技术栈
+- **框架**：Next.js 15 (React 19)
+- **样式**：Tailwind CSS 4
+- **UI组件**：Radix UI + shadcn/ui
+- **图标**：Lucide React
+- **类型安全**：TypeScript
 
-## 🔧 技术架构
+### AI集成
+- **GPT-4o**：主要的文本生成和分析模型，支持搜索预览功能
+- **Claude 3.5 Sonnet**：高质量文本生成，支持Web Search API
+- **Gemini 2.0 Flash**：快速响应的多模态模型，支持Google Search Grounding
+- **DeepSeek R1**：推理增强的开源模型
 
-### 多模型API集成
-- **统一接口**: `/api/chat-multi` 处理所有模型请求
-- **格式转换**: 自动转换不同提供商的API格式
-- **流式响应**: 支持实时打字效果
-- **错误处理**: 友好的错误信息和重试机制
-
-### 代理和网络处理
-- **Gemini专用**: 使用undici ProxyAgent处理Google API
-- **其他模型**: 使用标准fetch和https-proxy-agent
-- **环境适配**: 开发和生产环境的不同网络配置
-
-## 🚀 最新更新
-
-### v1.4.0 - 功能模块规划完成 (2024-01-XX)
-- ✅ 完整的功能模块设计方案
-- ✅ 侧边栏中文化和图标优化
-- ✅ 运营文案模块集成到侧边栏
-- ✅ 快捷按钮与侧边栏名称统一
-- ✅ 项目进度追踪文档建立
-- ✅ 详细的实施计划制定
-
-### v1.3.0 - 历史对话功能集成 (2024-01-XX)
-- ✅ 完整的历史对话管理系统
-- ✅ 自动保存对话到本地存储
-- ✅ 智能对话标题生成
-- ✅ 侧边栏历史对话列表
-- ✅ 一键删除和新建对话
-- ✅ URL路由支持对话恢复
-- ✅ 优化的用户体验和交互
-
-### v1.2.0 - Gemini集成成功 (2024-01-XX)
-- ✅ 成功集成Gemini 2.0 Flash模型
-- ✅ 实现undici代理突破网络限制
-- ✅ 优化流式响应和打字效果
-- ✅ 完善错误处理和用户反馈
-- ❌ 移除Gemini 2.5 Pro (无免费配额)
-
-## 🎯 功能模块规划
-
-### 已完成模块
-1. **Ask Anything** (`/ask-anything`) - 智能AI对话助手 ✅
-   - 多模型AI支持 (GPT-4o, Claude 3.5, Gemini 2.0 Flash, DeepSeek R1)
-   - 历史对话管理和智能标题生成
-   - 专业代理模式 (运营文案、PRD、Prompt、原型)
-   - 流式响应和优化的用户体验
-
-### 规划中的模块
-2. **运营文案工具** (`/marketing-house`) - 智能文案生成 🚧
-   - 文案模板库和A/B测试版本生成
-   - 多平台适配 (微信、微博、小红书等)
-   - 文案效果评估和优化建议
-
-3. **PRD 工具** (`/prd-house`) - 产品需求文档生成 📋
-   - 结构化PRD生成和需求模板库
-   - 用户故事管理和优先级评估
-   - 多格式导出 (Markdown、PDF、Word)
-
-4. **Prompt 工具** (`/prompt-house`) - AI提示词优化 🔧
-   - Prompt模板库和参数化支持
-   - 多模型效果对比测试
-   - 版本管理和效果评估
-
-5. **原型工具** (`/prototype-house`) - 低保真原型设计 🎨
-   - 拖拽式界面构建和组件库
-   - 交互流程设计和响应式预览
-   - 设计规范生成和原型分享
-
-6. **无限画布** (`/infinite-canvas`) - 思维导图和协作白板 🖼️
-   - 思维导图和流程图设计
-   - 多人实时协作和AI节点集成
-   - 模板库和多格式导出
-
-### 实施时间线
-- **阶段1** (1-2周): 基础框架完善和共享组件开发
-- **阶段2** (1-2周): 运营文案工具实现
-- **阶段3** (2-3周): Prompt工具和PRD工具实现
-- **阶段4** (4-6周): 原型工具和无限画布实现
-- **阶段5** (2-3周): 功能整合和用户体验优化
-
-## 当前开发状态
-
-项目已进入实现阶段，基于Next.js和React构建，主要功能包括：
-
-* 产品需求收集和定义
-* 多模型AI对话系统 ⭐ 已完成
-* 历史对话管理系统 ⭐ 已完成
-* 功能模块架构设计 ⭐ 已完成
-* 文档生成和管理 🚧 规划中
-* 技术方案规划 🚧 规划中
-* 页面设计支持 🚧 规划中
-* UI微调指令生成 ✅ 已有基础版本
-
-## 核心功能
-
-### 1. Ask Anything (`/ask-anything`) ⭐ 全面升级
-- **功能**：智能AI对话助手，支持多模型切换和历史对话管理
-- **特点**：
-  - 4个AI模型可选择 (GPT-4o, Claude 3.5, Gemini 2.0 Flash, DeepSeek R1)
-  - 实时模型状态显示
-  - 流式响应体验
-  - 专业代理模式（运营文案、PRD、原型等）
-  - **历史对话管理** ⭐ 新增
-    - 自动保存所有对话
-    - 智能标题生成
-    - 侧边栏快速访问
-    - 一键删除功能
-    - URL路由支持
-  - **中文化界面** ⭐ 新增
-    - 统一的中文用户界面
-    - 优化的图标系统
-    - 快捷按钮与侧边栏同步
-
-#### 历史对话功能详解：
-
-**自动保存机制**：
-- 每次对话自动保存到浏览器本地存储
-- 最多保存50个历史对话
-- 支持跨浏览器会话恢复
-
-**智能标题生成**：
-- 基于用户首条消息自动生成标题
-- 最大30字符，超出自动截断
-- 便于快速识别对话内容
-
-**侧边栏管理**：
-- 按时间倒序显示历史对话
-- 超过10个对话时支持折叠/展开
-- 悬停显示删除按钮
-- 点击即可恢复对话
-
-**URL路由支持**：
-- 每个对话都有唯一的URL
-- 支持直接分享对话链接
-- 刷新页面不丢失对话状态
-
-**数据结构**：
-```typescript
-interface ChatSession {
-  id: string;           // 唯一标识
-  title: string;        // 对话标题
-  messages: Message[];  // 消息列表
-  createdAt: Date;      // 创建时间
-  updatedAt: Date;      // 更新时间
-  model: string;        // 使用的模型
-  agent?: string;       // 专业代理模式
-}
+### API架构
+```
+/api/ai-prd
+├── expand-user-scenarios  # 用户场景扩展
+├── competitor-analysis    # 竞品分析
+├── generate-prd          # PRD生成
+└── review-content        # 内容审查
 ```
 
-### 2. UI 微调表单 (`/`)
-- **功能**：完整的 UI 微调指令生成流程
-- **特点**：
-  - 多步骤表单引导
-  - 页面选择（基于 bbx-project-analysis.json）
-  - 元素选择和描述
-  - 微调类型和优先级设置
-  - 结构化输出生成
-
-### 3. BBX 预览测试 (`/bbx-preview-test`)
-- **功能**：实时预览 BBX 页面并测试 postMessage 通信
-- **特点**：
-  - 左侧页面选择器
-  - 右侧 iframe 预览（支持本地 BBX 项目）
-  - 底部消息监听显示
-  - 支持真实页面交互测试
-
-### 4. 截图标注工具 (`/screenshot-annotator`)
-- **功能**：为页面截图定义高亮区域，生成配置文件
-- **使用方法**：
-  1. 选择要标注的截图
-  2. 在截图上拖拽鼠标选择区域
-  3. 设置区域名称、类型、描述和优先级
-  4. 点击已有区域进行编辑
-  5. 导出 JSON 配置文件
-
-#### 配置管理功能：
-- **自动保存**：标注的区域会自动保存到浏览器本地存储
-- **配置状态显示**：页面选择器显示每个页面的配置状态（✅已配置 / ⚪未配置）
-- **配置统计**：顶部显示已配置页面数量统计
-- **导入导出**：
-  - 导出当前页面配置
-  - 导出所有页面配置
-  - 导入单个或批量配置文件
-- **配置清理**：支持清空当前页面或所有页面的配置
-
-#### 区域类型说明：
-- **navigation**：导航相关元素（菜单、导航栏等）
-- **content**：内容区域（文章、列表、卡片等）
-- **action**：操作元素（按钮、链接等）
-- **form**：表单元素（输入框、选择器等）
-
-#### 配置文件格式：
-```json
-{
-  "pageName": "页面名称",
-  "screenshot": "截图文件名.png",
-  "regions": [
-    {
-      "id": "唯一标识",
-      "name": "区域名称",
-      "type": "区域类型",
-      "coordinates": {
-        "x": 100,
-        "y": 200,
-        "width": 300,
-        "height": 150
-      },
-      "description": "区域功能描述",
-      "priority": 5
-    }
-  ]
-}
-```
-
-## 🚀 快速开始
+## 📋 使用指南
 
 ### 环境配置
 
@@ -261,218 +73,157 @@ cp env.example .env.local
 ```
 
 2. **配置API密钥**
-根据你要使用的模型，在 `.env.local` 中配置相应的API密钥：
-
 ```bash
-# GPT-4o (已提供代理配置)
-GPT4O_API_KEY=lJWF6iS0aCEv
+# 必需的API密钥
+GPT4O_API_KEY=your_gpt4o_api_key_here
+GPT4O_BASE_URL=https://your-gpt4o-proxy.example.com/v1
 
-# Claude 3.5 (已提供代理配置)
-CLAUDE_API_KEY=_lT2H2#^16(yi+)0
-
-# Gemini (需要申请Google AI Studio API密钥)
+# 可选的备用模型（都支持内置网络搜索）
+CLAUDE_API_KEY=your_claude_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
-
-# DeepSeek (需要OpenRouter账户)
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
 
-3. **安装依赖并启动**
+3. **安装依赖**
 ```bash
-# 安装依赖
 pnpm install
+```
 
-# 启动开发服务器
+4. **启动开发服务器**
+```bash
 pnpm dev
-
-# 访问应用
-http://localhost:3000
 ```
 
-### 获取API密钥
+### 使用流程
 
-#### Gemini API密钥
-1. 访问 [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. 创建新的API密钥
-3. 将密钥添加到 `.env.local` 中的 `GEMINI_API_KEY`
+1. **填写基本信息**
+   - 选择业务线
+   - 指定团队成员
+   - 填写需求介绍
 
-#### OpenRouter API密钥 (DeepSeek)
-1. 访问 [OpenRouter](https://openrouter.ai/)
-2. 注册账户并获取API密钥
-3. 将密钥添加到 `.env.local` 中的 `OPENROUTER_API_KEY`
+2. **AI辅助分析**
+   - 使用"AI扩展"生成用户场景
+   - 使用"AI找竞品"进行市场调研
 
-## 技术架构
+3. **完善需求方案**
+   - 填写功能点和业务逻辑
+   - 设置优先级
+   - 添加原型链接
 
-### 核心技术栈
+4. **质量审查**
+   - 点击"AI审查内容"检查质量
+   - 根据建议完善内容
 
-* **前端框架**: Next.js 15.2.4 + React 19.0.0
-* **UI组件库**: Radix UI + Tailwind CSS
-* **状态管理**: Zustand
-* **AI集成**: 多模型API统一接口
-* **部署平台**: Vercel
-
-### 多模型架构
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   前端界面      │    │   统一API路由    │    │   各AI提供商    │
-│                 │    │                  │    │                 │
-│ ModelSelector   │───▶│ /api/chat-multi  │───▶│ GPT-4o (代理)   │
-│ 模型选择器      │    │                  │    │ Claude (代理)   │
-│                 │    │ 请求转换和       │    │ Gemini (官方)   │
-│ 统一聊天界面    │    │ 响应标准化       │    │ DeepSeek (OR)   │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
-
-### 核心技术
-- **多模型适配**: 统一不同AI提供商的API格式
-- **流式响应**: 支持实时打字效果
-- **错误处理**: 完善的错误提示和降级机制
-- **状态管理**: 模型可用性检测和状态显示
-
-## 使用指南
-
-### 多模型使用
-
-1. **选择模型**: 在Ask Anything页面顶部选择合适的AI模型
-2. **查看状态**: 绿色表示可用，红色表示未配置
-3. **切换模型**: 可随时切换，不影响对话历史
-4. **专业模式**: 使用快捷按钮启用特定领域的专业提示
-
-### BBX 项目集成
-1. 确保 BBX 项目在 `http://localhost:3001` 运行
-2. 访问 `/bbx-preview-test` 页面
-3. 选择对应页面进行预览和测试
-
-### 截图标注流程
-1. 将页面截图放入 `public/screenshots/` 目录
-2. 访问 `/screenshot-annotator` 页面
-3. 选择截图并进行区域标注
-4. 导出配置文件用于后续开发
+5. **生成PRD文档**
+   - 点击"AI生成完整PRD"
+   - 复制或下载最终文档
 
 ## 🔧 开发指南
 
-### 添加新的AI模型
-
-1. **更新模型配置** (`src/config/models.ts`)
-```typescript
-'new-model': {
-  id: 'new-model',
-  name: 'New Model',
-  provider: 'new-provider',
-  apiKey: process.env.NEW_MODEL_API_KEY || '',
-  baseUrl: process.env.NEW_MODEL_BASE_URL || '',
-  model: 'model-name',
-  supportsStreaming: true,
-}
-```
-
-2. **添加API适配** (`src/app/api/chat-multi/route.ts`)
-```typescript
-case 'new-provider':
-  // 添加新提供商的请求格式处理
-  return { /* 请求体格式 */ };
-```
-
-3. **更新环境变量示例** (`env.example`)
-```bash
-NEW_MODEL_API_KEY=your_api_key_here
-NEW_MODEL_BASE_URL=https://api.newprovider.com/v1
-```
-
-### 项目结构
+### 目录结构
 ```
 pm-assistant/
 ├── src/
 │   ├── app/
-│   │   ├── ask-anything/           # AI对话页面
-│   │   ├── api/
-│   │   │   ├── chat/              # 原始单模型API
-│   │   │   └── chat-multi/        # 新的多模型API
-│   │   ├── bbx-preview-test/      # BBX 预览测试
-│   │   └── screenshot-annotator/  # 截图标注工具
-│   ├── components/
-│   │   └── ui/
-│   │       ├── model-selector.tsx # 模型选择器
-│   │       └── dropdown-menu.tsx  # 下拉菜单组件
-│   ├── config/
-│   │   └── models.ts              # 多模型配置
-│   └── data/
-│       └── bbx-project-analysis.json
-├── public/
-│   └── screenshots/               # 页面截图存储
-├── env.example                    # 环境变量示例
-└── README.md
+│   │   ├── api/ai-prd/          # AI功能API接口
+│   │   └── test-demos/prd-cards-complete/  # 主要功能页面
+│   ├── components/ui/           # UI组件库
+│   ├── config/models.ts         # AI模型配置
+│   └── types.ts                 # 类型定义
+├── env.example                  # 环境变量示例
+└── README.md                    # 项目文档
 ```
 
-## 🎯 核心规划流程 (V2 - 引入 PRD 检查)
+### AI功能开发
 
-本助手提供三种核心规划流程，以适应不同的开发场景。用户在启动规划时会被引导选择其中一种模式：
+#### 添加新的AI功能
+1. 在`/api/ai-prd/route.ts`中添加新的处理函数
+2. 更新`AIFunction`类型定义
+3. 在前端调用`callAI`函数
 
-### 流程 A：开发一个全新的产品
+#### 模型配置
+```typescript
+// src/config/models.ts
+export const MODEL_CONFIGS: Record<string, ModelConfig> = {
+  'your-model': {
+    id: 'your-model',
+    name: 'Your Model',
+    provider: 'provider-name',
+    apiKey: process.env.YOUR_API_KEY || '',
+    baseUrl: 'https://api.example.com',
+    model: 'model-name',
+    supportsStreaming: true,
+    hasWebSearch: false, // 是否支持联网搜索
+  },
+};
+```
 
-* **适用场景:** 从零开始构思和开发新产品。
-* **组件流程:** `ProductDefinitionForm` -> `TechnicalPlanningForm` -> `PagePlanningForm`
-* **关键步骤:**  
-   1. **产品定义:** 全面收集产品基础信息（平台、概念、用户、核心功能、参考）及细化追问（价值、场景、优先级）。  
-   2. **技术规划:** 选择整体技术架构、数据库、API 风格、UI 库等。  
-   3. **页面规划:** 逐个规划新产品所需的核心页面。  
-   4. **完成:** 输出完整的初步规划信息。
-* **PRD 期望:** 此流程本身旨在帮助用户生成初步的 PRD 核心内容。如果用户已有草稿，可在对话中参考。
+## 🔍 故障排除
 
-### 流程 B：优化已有功能/页面
+### 常见问题
 
-* **适用场景:** 针对现有产品或项目中的某个具体功能或页面进行改进。
-* **组件流程:** `OptimizationForm`
-* **关键步骤:**  
-   1. **定位:** 确定优化的平台和具体功能/页面名称。  
-   2. **PRD 检查:** 询问是否有相关 PRD 文档描述**当前**的功能状态。  
-   3. **信息收集 (二选一):**  
-         * **有 PRD:** 用户提供 -> (AI 模拟) 读取并生成摘要 -> 用户确认/补充摘要。  
-         * **无 PRD:** 用户描述当前问题/不足。  
-   4. **目标设定:** 用户描述优化的具体目标。  
-   5. **方案构思:** 用户描述初步的优化方案或思路。  
-   6. **技术讨论点引导:** 用户思考并记录可能需要与技术团队沟通的方面（非强制技术判断）。  
-   7. **完成:** 输出优化规划信息。
-* **PRD 期望:** 理想情况是存在描述该功能原始状态的 PRD。本次优化的 PRD (或修订) 应重点说明**问题、目标和改动方案**。
+1. **401错误**
+   - 检查API密钥是否正确配置
+   - 确认.env.local文件存在且密钥有效
 
-### 流程 C：为现有产品添加新功能/页面
+2. **网络超时**
+   - 检查网络连接
+   - 某些地区可能需要代理访问
 
-* **适用场景:** 在现有产品或项目的基础上增加新的功能模块或页面。
-* **组件流程:** `AddFeatureForm` -> (可选) `TechnicalPlanningForm` -> (可选) `PagePlanningForm`
-* **关键步骤:**  
-   1. **定位:** 确定添加功能的平台和新功能的名称与主要作用。  
-   2. **PRD 检查:** 询问是否有描述**新功能**需求的 PRD 文档。  
-   3. **信息收集 (二选一):**  
-         * **有 PRD:** 用户提供 -> (AI 模拟) 读取并生成关于新功能(目标/用户/流程)的摘要 -> 用户确认/补充摘要。  
-         * **无 PRD:** 用户依次描述新功能的目标与价值、目标用户、核心流程。  
-   4. **集成点:** 用户描述新功能如何与现有功能/数据交互。  
-   5. **后续规划决策:** 用户选择是否继续进行技术和页面规划。  
-   6. **(可选) 技术规划:** (若继续) 使用 `TechnicalPlanningForm` 规划新功能所需的技术支持 (基于现有技术栈)。  
-   7. **(可选) 页面规划:** (若继续) 使用 `PagePlanningForm` 规划新功能相关的页面。  
-   8. **完成:** 输出新功能规划信息。
-* **PRD 期望:** 新功能的 PRD 应包含目标、用户、功能/故事、流程，并**重点描述如何与现有系统集成**。
+3. **AI响应异常**
+   - 检查控制台错误日志
+   - 确认模型配置正确
 
-## 📝 更新日志
+### 调试模式
+```bash
+# 启用详细日志
+DEBUG=ai-prd:* pnpm dev
+```
 
-### v2.0.0 - 多模型AI集成 (当前版本)
-- ✅ 集成5个主流AI模型
-- ✅ 统一的多模型API接口
-- ✅ 智能模型选择器组件
-- ✅ 实时模型状态检测
-- ✅ 流式响应优化
-- ✅ 完善的错误处理机制
+## 📈 性能优化
 
-### v1.0.0 - 基础功能
-- ✅ UI微调表单系统
-- ✅ BBX项目预览集成
-- ✅ 截图标注工具
-- ✅ 基础AI对话功能
+- **并行请求**：多个AI功能可以并行执行
+- **缓存机制**：相同请求结果会被缓存
+- **流式响应**：支持实时显示AI生成内容
+- **错误重试**：自动重试失败的请求
+
+## 🚀 部署指南
+
+### Vercel部署
+1. 连接GitHub仓库到Vercel
+2. 在Vercel环境变量中配置所有API密钥
+3. 部署完成
+
+### 自托管部署
+```bash
+# 构建生产版本
+pnpm build
+
+# 启动生产服务器
+pnpm start
+```
 
 ## 🤝 贡献指南
 
-欢迎提交Issue和Pull Request来改进项目！
+1. Fork本仓库
+2. 创建功能分支：`git checkout -b feature/amazing-feature`
+3. 提交更改：`git commit -m 'Add amazing feature'`
+4. 推送分支：`git push origin feature/amazing-feature`
+5. 开启Pull Request
 
-## �� 许可证
+## 📄 许可证
 
-MIT License
+MIT License - 详见[LICENSE](LICENSE)文件
+
+## 🙏 致谢
+
+- [Next.js](https://nextjs.org/) - React框架
+- [Tailwind CSS](https://tailwindcss.com/) - CSS框架
+- [Radix UI](https://www.radix-ui.com/) - UI原语
+- [OpenAI](https://openai.com/) - GPT模型和搜索预览功能
+- [Anthropic](https://www.anthropic.com/) - Claude模型和Web Search API
+- [Google AI](https://ai.google.dev/) - Gemini模型和Search Grounding
+
+---
+
+**联系方式**：如有问题或建议，请提交Issue或发送邮件。

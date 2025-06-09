@@ -13,10 +13,11 @@ interface ChatRequest {
   messages: ChatMessage[];
   context?: string;
   stream?: boolean;
+  enableWebSearch?: boolean;
 }
 
 // 为不同提供商构建请求体
-function buildRequestBody(config: ModelConfig, messages: ChatMessage[], context?: string): Record<string, unknown> {
+function buildRequestBody(config: ModelConfig, messages: ChatMessage[], context?: string, enableWebSearch = false): Record<string, unknown> {
   // 如果有context，将其作为系统消息添加到开头
   const finalMessages = context 
     ? [{ role: 'system' as const, content: context }, ...messages]
@@ -38,13 +39,27 @@ function buildRequestBody(config: ModelConfig, messages: ChatMessage[], context?
         contents[0].parts[0].text = `${systemMessage.content}\n\n${contents[0].parts[0].text}`;
       }
 
-      return {
+      const geminiBody: Record<string, unknown> = {
         contents,
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens: 2048,
         }
       };
+
+      // 为Gemini配置web search工具
+      if (enableWebSearch && config.hasWebSearch) {
+        geminiBody.tools = [{
+          google_search: {}
+        }];
+        geminiBody.tool_config = {
+          function_calling_config: {
+            mode: "ANY"
+          }
+        };
+      }
+
+      return geminiBody;
     
     case 'openai-proxy':
     case 'anthropic-proxy':
@@ -163,7 +178,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2)
 export async function POST(request: NextRequest) {
   try {
     const body: ChatRequest = await request.json();
-    const { model, messages, context } = body;
+    const { model, messages, context, enableWebSearch } = body;
 
     if (!model || !messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -195,16 +210,7 @@ export async function POST(request: NextRequest) {
       try {
         const geminiUrl = `${config.baseUrl}/models/${config.model}:generateContent?key=${config.apiKey}`;
         
-        const requestBody = {
-          contents: messages.map(msg => ({
-            role: msg.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: msg.content }]
-          })),
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          }
-        };
+        const requestBody = buildRequestBody(config, messages, context, enableWebSearch);
 
         // 使用undici代理进行请求
         const proxyAgent = new ProxyAgent('http://127.0.0.1:7890');
@@ -305,7 +311,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 其他提供商处理 - 使用标准fetch
-    const requestBody = buildRequestBody(config, messages, context);
+    const requestBody = buildRequestBody(config, messages, context, enableWebSearch);
     const headers = buildHeaders(config);
     const apiUrl = buildApiUrl(config);
     const fetchOptions = createFetchOptions(config, requestBody, headers);

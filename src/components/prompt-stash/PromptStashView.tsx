@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Search, MessageCircle, Lightbulb, Bookmark, GripVertical } from "lucide-react";
+import { Search, MessageCircle, Lightbulb, Bookmark, GripVertical, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAllTemplates, searchTemplatesInList } from '@/data/prompt-templates';
 import { PromptCard, ExtendedPromptTemplate } from './PromptCard';
 import { AnimatedAIInput } from '@/components/ui/animated-ai-input';
 import { MessageItem } from '@/components/message/message-item';
+import CreatePromptDialog from './CreatePromptDialog';
 
 // Default model for chat
 const DEFAULT_MODEL = 'gpt-4o-mini';
@@ -26,35 +27,49 @@ type ActiveTab = 'all' | 'favorites';
 // Tab 导航组件
 function TabNavigation({ 
   activeTab, 
-  onTabChange 
+  onTabChange,
+  onCreateClick 
 }: { 
   activeTab: ActiveTab; 
   onTabChange: (tab: ActiveTab) => void;
+  onCreateClick: () => void;
 }) {
   return (
-    <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
+    <div className="flex items-center gap-2">
+      {/* Create 按钮 */}
       <button
-        onClick={() => onTabChange('all')}
-        className={cn(
-          "px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200",
-          activeTab === 'all'
-            ? "bg-white text-gray-900 shadow-sm"
-            : "text-gray-600 hover:text-gray-900"
-        )}
+        onClick={onCreateClick}
+        className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200"
       >
-        All
+        <Plus className="w-4 h-4" />
+        Create
       </button>
-      <button
-        onClick={() => onTabChange('favorites')}
-        className={cn(
-          "px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1",
-          activeTab === 'favorites'
-            ? "bg-white text-gray-900 shadow-sm"
-            : "text-gray-600 hover:text-gray-900"
-        )}
-      >
-        <Bookmark className="w-4 h-4" />
-      </button>
+      
+      {/* Tab 选择 */}
+      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
+        <button
+          onClick={() => onTabChange('all')}
+          className={cn(
+            "px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200",
+            activeTab === 'all'
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-600 hover:text-gray-900"
+          )}
+        >
+          All
+        </button>
+        <button
+          onClick={() => onTabChange('favorites')}
+          className={cn(
+            "px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1",
+            activeTab === 'favorites'
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-600 hover:text-gray-900"
+          )}
+        >
+          <Bookmark className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -85,6 +100,9 @@ export default function PromptStashView() {
   const [leftWidth, setLeftWidth] = useState(800); // 初始宽度 800px
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // 创建Prompt弹窗状态
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   
   // 最小宽度限制
   const MIN_LEFT_WIDTH = 400; // 最小左侧宽度
@@ -197,6 +215,27 @@ export default function PromptStashView() {
       ...template,
       isFavorited: newFavorites.has(template.id)
     })));
+  };
+
+  // 刷新模板列表
+  const refreshTemplates = async () => {
+    setIsLoadingTemplates(true);
+    try {
+      const templates = await getAllTemplates();
+      const extendedTemplates: ExtendedPromptTemplate[] = templates.map(template => ({
+        ...template,
+        isFavorited: favorites.has(template.id)
+      }));
+      setAllTemplates(extendedTemplates);
+    } catch (error) {
+      console.error("Failed to refresh templates:", error);
+    }
+    setIsLoadingTemplates(false);
+  };
+
+  // 处理创建成功
+  const handleCreateSuccess = () => {
+    refreshTemplates();
   };
 
   // 选择模板
@@ -344,6 +383,7 @@ export default function PromptStashView() {
             <TabNavigation 
               activeTab={activeTab} 
               onTabChange={setActiveTab} 
+              onCreateClick={() => setShowCreateDialog(true)}
             />
           </div>
           
@@ -355,7 +395,7 @@ export default function PromptStashView() {
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
         </div>
@@ -421,7 +461,7 @@ export default function PromptStashView() {
             {/* 聊天头部 - 使用emoji替换机器人图标 */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
                   <span className="text-2xl">{selectedTemplate.emoji}</span>
                 </div>
                 <div>
@@ -440,8 +480,8 @@ export default function PromptStashView() {
             >
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mb-4">
-                    <MessageCircle className="w-8 h-8 text-blue-600" />
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-4">
+                    <MessageCircle className="w-8 h-8 text-orange-600" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     开始与 {selectedTemplate.name} 对话
@@ -450,7 +490,7 @@ export default function PromptStashView() {
                     {selectedTemplate.description}
                   </p>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Lightbulb className="w-4 h-4" />
+                    <Lightbulb className="w-4 h-4 text-orange-500" />
                     <span>AI Agent 将根据模板设定提供专业回答</span>
                   </div>
                 </div>
@@ -483,8 +523,8 @@ export default function PromptStashView() {
           // 未选择 prompt 时的占位符
           <div className="flex-1 flex items-center justify-center bg-gray-50">
             <div className="text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center mb-6 mx-auto">
-                <MessageCircle className="w-10 h-10 text-blue-600" />
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-6 mx-auto">
+                <MessageCircle className="w-10 h-10 text-orange-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">选择一个 Prompt 开始</h3>
               <p className="text-gray-600 max-w-md">
@@ -494,6 +534,13 @@ export default function PromptStashView() {
           </div>
         )}
       </div>
+      
+      {/* 创建Prompt弹窗 */}
+      <CreatePromptDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 } 

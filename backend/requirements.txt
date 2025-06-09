@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+redis
+psycopg2-binary
+langchain
+langgraph
+langchain-google-genai
+google-api-python-client httpx

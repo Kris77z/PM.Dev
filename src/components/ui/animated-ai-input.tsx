@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, ChevronDown, Paperclip } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Paperclip, Search } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -66,11 +66,13 @@ function useAutoResizeTextarea({
 }
 
 interface AnimatedAIInputProps {
-    onSendMessage: (message: string, selectedModel?: string) => void;
+    onSendMessage: (message: string, selectedModel?: string, enableWebSearch?: boolean) => void;
     placeholder?: string;
     disabled?: boolean;
     selectedModel?: string;
     onModelChange?: (modelId: string) => void;
+    webSearchEnabled?: boolean;
+    onWebSearchToggle?: (enabled: boolean) => void;
 }
 
 export function AnimatedAIInput({ 
@@ -78,7 +80,9 @@ export function AnimatedAIInput({
     placeholder = "What can I do for you?", 
     disabled = false,
     selectedModel: externalSelectedModel,
-    onModelChange 
+    onModelChange,
+    webSearchEnabled = false,
+    onWebSearchToggle
 }: AnimatedAIInputProps) {
     const [value, setValue] = useState("");
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({
@@ -89,7 +93,7 @@ export function AnimatedAIInput({
     // 模型名称到ID的映射
     const MODEL_NAME_TO_ID: Record<string, string> = {
         "GPT-4o": "gpt-4o",
-        "Claude-3.5-Sonnet": "claude-3.5-sonnet",
+        "Claude-3.7-Sonnet": "claude-3.7-sonnet",
         "Gemini-2.0-Flash": "gemini-2.0-flash",
         "DeepSeek: R1 0528": "deepseek-r1",
     };
@@ -97,7 +101,7 @@ export function AnimatedAIInput({
     // ID到模型名称的映射
     const MODEL_ID_TO_NAME: Record<string, string> = {
         "gpt-4o": "GPT-4o",
-        "claude-3.5-sonnet": "Claude-3.5-Sonnet",
+        "claude-3.7-sonnet": "Claude-3.7-Sonnet",
         "gemini-2.0-flash": "Gemini-2.0-Flash",
         "deepseek-r1": "DeepSeek: R1 0528",
     };
@@ -114,7 +118,7 @@ export function AnimatedAIInput({
 
     const AI_MODELS = [
         "GPT-4o",
-        "Claude-3.5-Sonnet",
+        "Claude-3.7-Sonnet",
         "Gemini-2.0-Flash",
         "DeepSeek: R1 0528",
     ];
@@ -127,7 +131,7 @@ export function AnimatedAIInput({
                 className="w-4 h-4"
             />
         ),
-        "Claude-3.5-Sonnet": (
+        "Claude-3.7-Sonnet": (
             <img 
                 src="/icons/claude.svg"
                 alt="Claude"
@@ -160,9 +164,16 @@ export function AnimatedAIInput({
     const handleSend = () => {
         if (!value.trim() || disabled) return;
         const modelId = MODEL_NAME_TO_ID[selectedModel] || "gpt-4o";
-        onSendMessage(value.trim(), modelId);
+        onSendMessage(value.trim(), modelId, webSearchEnabled);
         setValue("");
         adjustHeight(true);
+    };
+
+    // 检查是否显示Web Search按钮 (只有Gemini-2.0-Flash时显示)
+    const showWebSearchButton = selectedModel === "Gemini-2.0-Flash";
+
+    const handleWebSearchToggle = () => {
+        onWebSearchToggle?.(!webSearchEnabled);
     };
 
     const handleModelChange = (model: string) => {
@@ -262,6 +273,30 @@ export function AnimatedAIInput({
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                     <div className="h-4 w-px bg-black/10 dark:bg-white/10 mx-0.5" />
+                                    
+                                    {/* Web Search 按钮 - 只有选择Gemini-2.0-Flash时显示 */}
+                                    {showWebSearchButton && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={handleWebSearchToggle}
+                                                className={cn(
+                                                    "rounded-lg p-2 cursor-pointer",
+                                                    "hover:bg-black/10 dark:hover:bg-white/10 focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-blue-500",
+                                                    "transition-colors",
+                                                    webSearchEnabled 
+                                                        ? "bg-blue-500/20 text-blue-600 dark:text-blue-400" 
+                                                        : "bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"
+                                                )}
+                                                aria-label="Toggle web search"
+                                                title={webSearchEnabled ? "禁用网络搜索" : "启用网络搜索"}
+                                            >
+                                                <Search className="w-4 h-4 transition-colors" />
+                                            </button>
+                                            <div className="h-4 w-px bg-black/10 dark:bg-white/10 mx-0.5" />
+                                        </>
+                                    )}
+                                    
                                     <label
                                         className={cn(
                                             "rounded-lg p-2 bg-black/5 dark:bg-white/5 cursor-pointer",
