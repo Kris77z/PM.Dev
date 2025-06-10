@@ -95,6 +95,8 @@ export function AnimatedAIInput({
         "GPT-4o": "gpt-4o",
         "Claude-3.7-Sonnet": "claude-3.7-sonnet",
         "Gemini-2.0-Flash": "gemini-2.0-flash",
+        "gemini-2.5-flash-preview-05-20": "gemini-2.5-flash-preview-05-20",
+        "gemini-2.5-pro-preview-06-05": "gemini-2.5-pro-preview-06-05",
         "DeepSeek: R1 0528": "deepseek-r1",
     };
 
@@ -103,6 +105,8 @@ export function AnimatedAIInput({
         "gpt-4o": "GPT-4o",
         "claude-3.7-sonnet": "Claude-3.7-Sonnet",
         "gemini-2.0-flash": "Gemini-2.0-Flash",
+        "gemini-2.5-flash-preview-05-20": "gemini-2.5-flash-preview-05-20",
+        "gemini-2.5-pro-preview-06-05": "gemini-2.5-pro-preview-06-05",
         "deepseek-r1": "DeepSeek: R1 0528",
     };
 
@@ -120,6 +124,8 @@ export function AnimatedAIInput({
         "GPT-4o",
         "Claude-3.7-Sonnet",
         "Gemini-2.0-Flash",
+        "Gemini-2.5-Flash-preview-05-20",
+        "Gemini-2.5-Pro-preview-06-05",
         "DeepSeek: R1 0528",
     ];
 
@@ -139,6 +145,20 @@ export function AnimatedAIInput({
             />
         ),
         "Gemini-2.0-Flash": (
+            <img 
+                src="/icons/gemini.svg"
+                alt="Gemini"
+                className="w-4 h-4"
+            />
+        ),
+        "Gemini-2.5-Flash-preview-05-20": (
+            <img 
+                src="/icons/gemini.svg"
+                alt="Gemini"
+                className="w-4 h-4"
+            />
+        ),
+        "Gemini-2.5-Pro-preview-06-05": (
             <img 
                 src="/icons/gemini.svg"
                 alt="Gemini"
@@ -169,8 +189,8 @@ export function AnimatedAIInput({
         adjustHeight(true);
     };
 
-    // 检查是否显示Web Search按钮 (只有Gemini-2.0-Flash时显示)
-    const showWebSearchButton = selectedModel === "Gemini-2.0-Flash";
+    // 检查是否显示Web Search按钮 (Gemini系列模型都支持)
+    const showWebSearchButton = selectedModel.startsWith("Gemini-");
 
     const handleWebSearchToggle = () => {
         onWebSearchToggle?.(!webSearchEnabled);
