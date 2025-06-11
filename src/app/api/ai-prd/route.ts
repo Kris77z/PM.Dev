@@ -8,7 +8,10 @@ type AIFunction =
   | 'generate-requirement-goal'
   | 'competitor-analysis' 
   | 'review-content'
-  | 'generate-prd';
+  | 'generate-prd'
+  | 'suggest-features'
+  | 'suggest-business-logic'
+  | 'suggest-edge-cases';
 
 interface AIRequest {
   function: AIFunction;
@@ -39,6 +42,12 @@ export async function POST(request: NextRequest) {
         return await handleContentReview(data, modelId);
       case 'generate-prd':
         return await handlePRDGeneration(data, modelId);
+      case 'suggest-features':
+        return await handleFeatureSuggestion(data, modelId);
+      case 'suggest-business-logic':
+        return await handleBusinessLogicSuggestion(data, modelId);
+      case 'suggest-edge-cases':
+        return await handleEdgeCasesSuggestion(data, modelId);
       default:
         return NextResponse.json(
           { error: '不支持的AI功能' },
@@ -339,21 +348,29 @@ ${JSON.stringify(iterationHistory, null, 2)}
 5. **项目管理（10分）**：优先级、时间规划、人员配置是否合理
 6. **风险控制（10分）**：边缘场景、异常处理是否充分
 
-请严格按照以下JSON格式输出：
+请严格按照以下JSON格式输出，不要添加任何额外的解释文字，只输出JSON：
+
+\`\`\`json
 {
-  "score": 总分数字（0-100）,
-  "isReadyForGeneration": 是否建议生成PRD（boolean）,
+  "score": 75,
+  "isReadyForGeneration": true,
   "issues": [
     {
-      "level": "error/warning/info",
-      "field": "问题字段名",
-      "message": "问题描述",
-      "suggestion": "改进建议"
+      "level": "warning",
+      "field": "需求目标",
+      "message": "需求目标描述可以更具体",
+      "suggestion": "建议增加具体的成功指标和时间节点"
     }
   ],
-  "summary": "总体评价摘要",
-  "recommendations": ["改进建议1", "改进建议2"]
-}`;
+  "summary": "PRD整体质量良好，主要功能清晰，但部分细节需要完善",
+  "recommendations": [
+    "增加具体的验收标准",
+    "完善异常场景处理方案"
+  ]
+}
+\`\`\`
+
+重要：请只返回上述格式的JSON内容，不要添加任何其他文字。`;
 
   try {
     const result = await callAI(modelId, prompt, true); // 使用联网获取最新最佳实践
@@ -425,6 +442,166 @@ ${JSON.stringify(iterationHistory, null, 2)}
     console.error('PRD生成失败:', error);
     return NextResponse.json(
       { error: 'PRD生成失败', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
+}
+
+// 5. 功能建议（不需要联网）
+async function handleFeatureSuggestion(data: Record<string, unknown>, modelId: string) {
+  const { requirement, userScenarios, competitorAnalysis } = data;
+  
+  if (!requirement) {
+    return NextResponse.json(
+      { error: '需求描述不能为空' },
+      { status: 400 }
+    );
+  }
+
+  const prompt = `作为一名专业的产品经理，请基于以下信息，为产品功能提供专业建议。
+
+**需求描述**：
+${requirement}
+
+**用户场景分析**：
+${userScenarios ? JSON.stringify(userScenarios, null, 2) : '未提供'}
+
+**竞品分析**：
+${competitorAnalysis || '未提供'}
+
+请从以下维度分析并提供功能建议：
+
+## 分析要求
+1. **功能解构**：将需求拆解为具体的功能模块
+2. **用户价值**：每个功能对用户的具体价值
+3. **实现复杂度**：评估技术实现难度
+4. **优先级排序**：根据价值和复杂度进行排序
+
+## 输出格式
+请严格按照以下JSON格式输出，不要添加任何额外的文字：
+
+[
+  {
+    "featureName": "功能名称",
+    "description": "功能详细描述",
+    "workflow": "用户使用流程",
+    "value": "用户价值说明",
+    "complexity": "实现复杂度(低/中/高)",
+    "priority": "优先级(高/中/低)"
+  }
+]`;
+
+  try {
+    const result = await callAI(modelId, prompt, false);
+    const suggestions = parseJSONResponse(result);
+    
+    return NextResponse.json({
+      success: true,
+      suggestions
+    });
+  } catch (error) {
+    console.error('功能建议失败:', error);
+    return NextResponse.json(
+      { error: '功能建议失败', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
+}
+
+// 6. 业务逻辑建议（不需要联网）
+async function handleBusinessLogicSuggestion(data: Record<string, unknown>, modelId: string) {
+  const { featureName, requirement } = data;
+  
+  if (!featureName) {
+    return NextResponse.json(
+      { error: '功能名称不能为空' },
+      { status: 400 }
+    );
+  }
+
+  const prompt = `作为一名专业的产品经理，请为以下功能设计详细的业务逻辑。
+
+**功能名称**：${featureName}
+**需求背景**：${requirement || '未提供'}
+
+请提供完整的业务逻辑设计，包括：
+
+## 业务逻辑要求
+1. **核心流程**：主要业务流程步骤
+2. **判断条件**：关键决策点和判断逻辑
+3. **数据流转**：数据在系统中的流动过程
+4. **状态管理**：不同状态的定义和转换规则
+5. **权限控制**：用户权限和操作限制
+6. **异常处理**：异常情况的处理机制
+
+请以清晰、结构化的文本形式输出，不需要JSON格式。`;
+
+  try {
+    const result = await callAI(modelId, prompt, false);
+    
+    return NextResponse.json({
+      success: true,
+      suggestion: result
+    });
+  } catch (error) {
+    console.error('业务逻辑建议失败:', error);
+    return NextResponse.json(
+      { error: '业务逻辑建议失败', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
+}
+
+// 7. 边缘场景建议（不需要联网）
+async function handleEdgeCasesSuggestion(data: Record<string, unknown>, modelId: string) {
+  const { featureName, businessLogic } = data;
+  
+  if (!featureName) {
+    return NextResponse.json(
+      { error: '功能名称不能为空' },
+      { status: 400 }
+    );
+  }
+
+  const prompt = `作为一名专业的产品经理和测试专家，请为以下功能分析可能的边缘场景和异常情况。
+
+**功能名称**：${featureName}
+**业务逻辑**：${businessLogic || '未提供'}
+
+请从以下维度分析边缘场景：
+
+## 分析维度
+1. **输入异常**：非法、超限、空值等输入场景
+2. **状态异常**：系统状态不正常时的处理
+3. **网络异常**：网络中断、超时等情况
+4. **并发场景**：多用户同时操作的冲突处理
+5. **数据异常**：数据不一致、丢失等情况
+6. **权限边界**：权限不足、越权操作等
+7. **性能极限**：大数据量、高并发等极限情况
+
+请严格按照以下JSON格式输出，不要添加任何额外的文字：
+
+[
+  {
+    "category": "场景分类",
+    "scenario": "具体场景描述",
+    "issue": "可能产生的问题",
+    "solution": "解决方案建议"
+  }
+]`;
+
+  try {
+    const result = await callAI(modelId, prompt, false);
+    const suggestions = parseJSONResponse(result);
+    
+    return NextResponse.json({
+      success: true,
+      suggestions
+    });
+  } catch (error) {
+    console.error('边缘场景建议失败:', error);
+    return NextResponse.json(
+      { error: '边缘场景建议失败', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -598,20 +775,78 @@ async function callOtherAPI(config: ModelConfig, messages: ChatMessage[], enable
   }
 }
 
-// JSON解析辅助函数
+// JSON解析辅助函数 - 增强版，能处理各种AI返回格式
 function parseJSONResponse(response: string): unknown {
+  console.log('原始AI响应:', response.substring(0, 500) + (response.length > 500 ? '...' : ''));
+  
   try {
     // 尝试直接解析
     return JSON.parse(response);
   } catch {
-    // 尝试提取JSON块
-    const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || 
-                     response.match(/\[[\s\S]*\]/) || 
-                     response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const jsonStr = jsonMatch[0].replace(/```json|```/g, '').trim();
-      return JSON.parse(jsonStr);
+    // 清理响应文本
+    let cleanedResponse = response.trim();
+    
+    // 移除可能的markdown代码块标记
+    cleanedResponse = cleanedResponse.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+    
+    // 尝试提取JSON对象
+    const patterns = [
+      // 标准JSON对象
+      /\{[\s\S]*\}/,
+      // JSON数组
+      /\[[\s\S]*\]/,
+      // 在文本中间的JSON对象
+      /(?:response|result|output|json)[\s:]*(\{[\s\S]*?\})/i,
+      // 在冒号后的JSON对象
+      /:[\s]*(\{[\s\S]*?\})/,
+      // 最后的JSON对象
+      /.*(\{[\s\S]*\}).*$/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = cleanedResponse.match(pattern);
+      if (match) {
+        try {
+          const jsonStr = (match[1] || match[0]).trim();
+          console.log('尝试解析JSON:', jsonStr.substring(0, 200) + '...');
+          const parsed = JSON.parse(jsonStr);
+          console.log('JSON解析成功');
+          return parsed;
+        } catch (e) {
+          console.log('JSON解析失败:', e instanceof Error ? e.message : String(e));
+          continue;
+        }
+      }
     }
-    throw new Error('无法解析AI响应为JSON格式');
+    
+    // 如果所有模式都失败，尝试从响应中构建一个基本的审查结果
+    console.log('尝试从文本中提取信息...');
+    
+    // 查找评分
+    const scoreMatch = cleanedResponse.match(/(?:分数|评分|score)[\s:：]*(\d+)/i);
+    const score = scoreMatch ? parseInt(scoreMatch[1]) : 60; // 默认60分
+    
+    // 查找是否建议生成PRD
+    const readyMatch = cleanedResponse.match(/(?:建议|推荐|ready)[\s\S]*?(?:生成|generation)/i);
+    const isReadyForGeneration = readyMatch ? !cleanedResponse.includes('不建议') && !cleanedResponse.includes('不推荐') : score >= 70;
+    
+    // 构建默认响应
+    const fallbackResponse = {
+      score,
+      isReadyForGeneration,
+      issues: [
+        {
+          level: "warning",
+          field: "AI解析",
+          message: "AI返回格式不规范，已使用默认解析",
+          suggestion: "建议完善内容后重新审查"
+        }
+      ],
+      summary: cleanedResponse.substring(0, 200) + (cleanedResponse.length > 200 ? '...' : ''),
+      recommendations: ["建议完善PRD内容", "重新进行AI审查"]
+    };
+    
+    console.log('使用备用解析结果:', fallbackResponse);
+    return fallbackResponse;
   }
 } 

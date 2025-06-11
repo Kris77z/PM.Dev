@@ -52,6 +52,7 @@ type ExpandablePropsBase = Omit<HTMLMotionProps<"div">, "children">
 interface ExpandableProps extends ExpandablePropsBase {
   children: ReactNode | ((props: { isExpanded: boolean }) => ReactNode)
   expanded?: boolean
+  defaultExpanded?: boolean
   onToggle?: () => void
   transitionDuration?: number
   easeType?: string
@@ -63,12 +64,14 @@ interface ExpandableProps extends ExpandablePropsBase {
   onCollapseStart?: () => void
   onCollapseEnd?: () => void
 }
+
 // ROOT Expand component
 const Expandable = React.forwardRef<HTMLDivElement, ExpandableProps>(
   (
     {
       children,
       expanded,
+      defaultExpanded = false,
       onToggle,
       transitionDuration = 0.3,
       easeType = "easeInOut",
@@ -84,7 +87,7 @@ const Expandable = React.forwardRef<HTMLDivElement, ExpandableProps>(
     ref
   ) => {
     // Internal state for expansion when the component is uncontrolled
-    const [isExpandedInternal, setIsExpandedInternal] = useState(false)
+    const [isExpandedInternal, setIsExpandedInternal] = useState(defaultExpanded)
 
     // Use the provided expanded prop if available, otherwise use internal state
     const isExpanded = expanded !== undefined ? expanded : isExpandedInternal
@@ -137,11 +140,13 @@ const Expandable = React.forwardRef<HTMLDivElement, ExpandableProps>(
   }
 )
 
+Expandable.displayName = "Expandable"
+
 // Simplify animation types
 type AnimationPreset = {
-  initial: { [key: string]: any }
-  animate: { [key: string]: any }
-  exit: { [key: string]: any }
+  initial: Record<string, number | string | boolean>
+  animate: Record<string, number | string | boolean>
+  exit: Record<string, number | string | boolean>
 }
 
 // Update ANIMATION_PRESETS type
@@ -198,19 +203,17 @@ const ANIMATION_PRESETS: Record<string, AnimationPreset> = {
   },
 }
 
-// Update type definitions
-type AnimationConfig = {
-  initial: { [key: string]: number | string }
-  animate: { [key: string]: number | string }
-  exit: { [key: string]: number | string }
-}
-
 // Props for defining custom animations
 interface AnimationProps {
   initial?: TargetAndTransition
   animate?: TargetAndTransition
   exit?: TargetAndTransition
-  transition?: any
+  transition?: {
+    duration?: number
+    ease?: string
+    delay?: number
+    [key: string]: unknown
+  }
 }
 
 // Inside ExpandableContent component
@@ -339,6 +342,8 @@ const ExpandableContent = React.forwardRef<
     )
   }
 )
+
+ExpandableContent.displayName = "ExpandableContent"
 
 interface ExpandableCardProps {
   children: ReactNode

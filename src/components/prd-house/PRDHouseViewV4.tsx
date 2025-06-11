@@ -18,7 +18,6 @@ import {
   ExpandableCardFooter
 } from '@/components/ui/expandable';
 import { useCompletion } from 'ai/react';
-import { MarkdownPreview } from '@/components/ui/markdown-preview';
 import { 
   Stepper, 
   StepperItem, 
@@ -30,7 +29,10 @@ import {
 
 // --- 定义新工作流和数据结构 ---
 
-type WorkflowStage = 'welcome' | 'guiding' | 'generating' | 'completed';
+type WorkflowStage = 'welcome' | 'guiding' | 'ai-review' | 'prd-generation' | 'completed';
+
+// 视图模式：单个卡片展示 or 概览模式（显示所有卡片）
+type ViewMode = 'single' | 'overview';
 
 interface Question {
   id: string;
@@ -280,6 +282,8 @@ export default function PRDHouseViewV4() {
   const [chapters] = useState<PrdChapter[]>(prdTemplate);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>('single');
+  const [generatedPRD, setGeneratedPRD] = useState<string>('');
   
   // 动态记录状态
   const [changeRecords, setChangeRecords] = useState<ChangeRecord[]>([
@@ -315,7 +319,7 @@ export default function PRDHouseViewV4() {
     }]
   });
 
-  const { completion, handleSubmit, isLoading } = useCompletion({
+  const { handleSubmit, isLoading } = useCompletion({
     api: '/api/generate-prd',
     onFinish: () => {
       setWorkflowStage('completed');
@@ -594,35 +598,7 @@ export default function PRDHouseViewV4() {
     });
   };
 
-  // 重新开始
-  const restart = () => {
-    setWorkflowStage('welcome');
-    setAnswers({});
-    setShowStartScreen(true);
-    setShowWelcome(false);
-    setShowChapters(false);
-    setStartFadeOut(false);
-    setCurrentChapterIndex(0);
-  };
-  
-  // 复制PRD内容
-  const copyPRD = () => {
-    navigator.clipboard.writeText(completion).then(() => {
-      console.log('PRD copied to clipboard');
-      // 可以加一个 toast 提示
-    });
-  };
 
-  // 下载PRD文件
-  const downloadPRD = () => {
-    const blob = new Blob([completion], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `PRD-功能迭代.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   // 检查当前章节是否完成
   const isCurrentChapterComplete = () => {
@@ -642,6 +618,78 @@ export default function PRDHouseViewV4() {
 
   // 渲染章节卡片
   const renderChapterCards = () => {
+    // 概览模式：显示所有卡片
+    if (viewMode === 'overview') {
+      return (
+        <div className="w-full space-y-6">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">选择要修改的部分</h2>
+            <p className="text-gray-600 mt-2">点击任意卡片进入编辑模式</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {chapters.slice(0, 3).map((chapter, index) => (
+              <div
+                key={chapter.id}
+                onClick={() => handleSelectChapter(index)}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all duration-200 group"
+              >
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-medium group-hover:bg-orange-200">
+                    {index + 1}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-orange-600">{chapter.title}</h3>
+                </div>
+                <p className="text-gray-600 text-sm mb-4">{chapter.description}</p>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600">已完成</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {chapters.slice(3).map((chapter, index) => (
+              <div
+                key={chapter.id}
+                onClick={() => handleSelectChapter(index + 3)}
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md hover:border-orange-300 transition-all duration-200 group"
+              >
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-medium group-hover:bg-orange-200">
+                    {index + 4}
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-orange-600">{chapter.title}</h3>
+                </div>
+                <p className="text-gray-600 text-sm mb-4">{chapter.description}</p>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-green-600">已完成</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-center mt-8">
+            <Button 
+              onClick={handleContentReview}
+              disabled={isAILoading['review-content']}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {isAILoading['review-content'] ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
+              重新进行AI审查
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // 单个卡片模式
     const currentChapter = chapters[currentChapterIndex];
     const isLastChapter = currentChapterIndex === chapters.length - 1;
     const isComplete = isCurrentChapterComplete();
@@ -1358,6 +1406,7 @@ export default function PRDHouseViewV4() {
             key={currentChapter.id} 
             expandDirection="both"
             expandBehavior="push"
+            defaultExpanded={currentChapterIndex !== 0}
           >
             <ExpandableCard 
               collapsedSize={{ width: 480, height: 140 }} 
@@ -1400,25 +1449,49 @@ export default function PRDHouseViewV4() {
                     
                     {isLastChapter ? (
                       <div className="flex-1 mx-4 flex justify-end gap-3">
-                        <Button 
-                          onClick={handleContentReview}
-                          disabled={Object.values(isAILoading).some(Boolean)}
-                          variant="outline" 
-                          className={`px-6 py-2 ${
-                            contentReview 
-                              ? contentReview.score >= 80 
-                                ? "border-green-300 text-green-600 hover:bg-green-50" 
-                                : "border-yellow-300 text-yellow-600 hover:bg-yellow-50"
-                              : "border-blue-300 text-blue-600 hover:bg-blue-50"
-                          }`}
-                        >
-                          {isAILoading['review-content'] ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                          )}
-                          {contentReview ? `已审查(${contentReview.score}分)` : 'AI内容审查'}
-                        </Button>
+                        {contentReview ? (
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => setWorkflowStage('ai-review')}
+                              variant="outline" 
+                              className={`px-6 py-2 ${
+                                contentReview.score >= 80 
+                                  ? "border-green-300 text-green-600 hover:bg-green-50" 
+                                  : "border-yellow-300 text-yellow-600 hover:bg-yellow-50"
+                              }`}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              查看审查结果
+                            </Button>
+                            <Button 
+                              onClick={handleContentReview}
+                              disabled={Object.values(isAILoading).some(Boolean)}
+                              variant="outline" 
+                              className="px-6 py-2 border-blue-300 text-blue-600 hover:bg-blue-50"
+                            >
+                              {isAILoading['review-content'] ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Sparkles className="h-4 w-4 mr-2" />
+                              )}
+                              重新审查
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button 
+                            onClick={handleContentReview}
+                            disabled={Object.values(isAILoading).some(Boolean)}
+                            variant="outline" 
+                            className="px-6 py-2 border-orange-500 text-orange-500 hover:bg-orange-50"
+                          >
+                            {isAILoading['review-content'] ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                            )}
+                            AI内容审查
+                          </Button>
+                        )}
                         
                         <form onSubmit={generatePRD} className="flex-shrink-0">
                           <Button
@@ -1455,60 +1528,241 @@ export default function PRDHouseViewV4() {
     );
   };
   
-  const renderGeneratingView = () => (
-    <div className="w-full max-w-4xl mx-auto py-8">
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <h2 className="text-2xl font-semibold text-center mb-4">AI 正在为您生成PRD...</h2>
-        <p className="text-gray-600 text-center mb-8">请稍候，我们将您的想法转化为专业的文档。</p>
-        <MarkdownPreview content={completion} />
-      </div>
+  // AI审查结果视图
+  const renderAIReviewView = () => (
+    <div className="w-full flex justify-center">
+      <Expandable 
+        expandDirection="both"
+        expandBehavior="push"
+        defaultExpanded={true}
+      >
+        <ExpandableCard 
+          collapsedSize={{ width: 480, height: 140 }} 
+          expandedSize={{ width: 800, height: undefined }} 
+          className="mx-auto"
+          hoverToExpand={false}
+        >
+          <ExpandableTrigger>
+            <ExpandableCardHeader className="py-6 cursor-pointer h-full">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-gray-800">AI内容审查结果</h2>
+                  <p className="text-sm text-gray-500">查看详细的评分和改进建议</p>
+                </div>
+              </div>
+            </ExpandableCardHeader>
+          </ExpandableTrigger>
+          
+          <ExpandableContent preset="fade" stagger staggerChildren={0.1}>
+            <ExpandableCardContent className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+              <div className="pt-4 pb-2">
+                {contentReview && (
+                  <div className="space-y-6 pr-2">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <span className="text-lg font-medium">内容评分</span>
+                      <span className={`text-3xl font-bold ${
+                        contentReview.score >= 80 ? 'text-green-600' : 
+                        contentReview.score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
+                        {contentReview.score}/100
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <h3 className="font-semibold text-gray-900">总体评价</h3>
+                      <p className="text-gray-600 leading-relaxed">{contentReview.summary}</p>
+                    </div>
+                    
+                    {contentReview.issues && contentReview.issues.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-gray-900">问题清单</h3>
+                        <div className="space-y-3">
+                          {contentReview.issues.map((issue, index) => (
+                            <div key={index} className={`border-l-4 pl-4 py-3 rounded-r-lg ${
+                              issue.level === 'error' ? 'bg-red-50 border-red-400' :
+                              issue.level === 'warning' ? 'bg-yellow-50 border-yellow-400' :
+                              'bg-blue-50 border-blue-400'
+                            }`}>
+                              <div className="font-medium text-gray-900">{issue.message}</div>
+                              <div className="text-sm text-gray-600 mt-1">{issue.suggestion}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {contentReview.recommendations && contentReview.recommendations.length > 0 && (
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-gray-900">改进建议</h3>
+                        <ul className="space-y-2">
+                          {contentReview.recommendations.map((rec, index) => (
+                            <li key={index} className="flex items-start space-x-2">
+                              <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></span>
+                              <span className="text-gray-600">{rec}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </ExpandableCardContent>
+            
+            <ExpandableCardFooter>
+              <div className="flex items-center justify-between w-full pt-4">
+                <Button 
+                  onClick={handleBackToModify}
+                  variant="outline"
+                  className="border-gray-300"
+                >
+                  返回修改
+                </Button>
+                <Button 
+                  onClick={handleGeneratePRD}
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  生成PRD
+                </Button>
+              </div>
+            </ExpandableCardFooter>
+          </ExpandableContent>
+        </ExpandableCard>
+      </Expandable>
+    </div>
+  );
+
+  // PRD生成中视图
+  const renderPRDGenerationView = () => (
+    <div className="w-full flex justify-center">
+      <Expandable 
+        expandDirection="both"
+        expandBehavior="push"
+        defaultExpanded={true}
+      >
+        <ExpandableCard 
+          collapsedSize={{ width: 480, height: 140 }} 
+          expandedSize={{ width: 800, height: undefined }} 
+          className="mx-auto"
+          hoverToExpand={false}
+        >
+          <ExpandableTrigger>
+            <ExpandableCardHeader className="py-6 cursor-pointer h-full">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-gray-800">AI正在生成PRD文档</h2>
+                  <p className="text-sm text-gray-500">正在根据您的输入生成专业的产品需求文档</p>
+                </div>
+              </div>
+            </ExpandableCardHeader>
+          </ExpandableTrigger>
+          
+          <ExpandableContent preset="fade">
+            <ExpandableCardContent>
+              <div className="pt-4 pb-2">
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center space-x-3 text-blue-600 mb-4">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                    <span className="text-lg font-medium">正在生成中，请稍候...</span>
+                  </div>
+                  <p className="text-gray-500">AI正在基于您的输入生成专业的产品需求文档</p>
+                </div>
+              </div>
+            </ExpandableCardContent>
+          </ExpandableContent>
+        </ExpandableCard>
+      </Expandable>
     </div>
   );
   
-  const renderCompletedView = () => (
-     <div className="w-full max-w-4xl mx-auto py-8">
-      <div className="bg-white rounded-lg shadow-lg">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">您的产品需求文档已生成！</h2>
-              <p className="text-sm text-gray-600 mt-1">您可以复制内容或直接下载Markdown文件。</p>
-            </div>
-            <div className="flex gap-2">
-                <button
-                  onClick={copyPRD}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 transition-colors duration-200"
+  // 完成的PRD视图
+  const renderCompletedPRDView = () => (
+    <div className="w-full flex justify-center">
+      <Expandable 
+        expandDirection="both"
+        expandBehavior="push"
+        defaultExpanded={true}
+      >
+        <ExpandableCard 
+          collapsedSize={{ width: 480, height: 140 }} 
+          expandedSize={{ width: 800, height: undefined }} 
+          className="mx-auto"
+          hoverToExpand={false}
+        >
+          <ExpandableTrigger>
+            <ExpandableCardHeader className="py-6 cursor-pointer h-full">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <FileText className="h-5 w-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-gray-800">生成的PRD文档</h2>
+                  <p className="text-sm text-gray-500">您的产品需求文档已生成完成</p>
+                </div>
+              </div>
+            </ExpandableCardHeader>
+          </ExpandableTrigger>
+
+          <ExpandableContent preset="fade" stagger staggerChildren={0.1}>
+            <ExpandableCardContent className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+              <div className="pt-4 pb-2">
+                <div className="space-y-4 pr-2">
+                  <div className="prose max-w-none bg-gray-50 p-6 rounded-lg border max-h-96 overflow-y-auto">
+                    <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed text-gray-800">
+                      {generatedPRD}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            </ExpandableCardContent>
+
+            <ExpandableCardFooter>
+              <div className="flex items-center justify-between w-full pt-4">
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={copyGeneratedPRD}
+                    variant="outline"
+                    className="border-gray-300"
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    复制
+                  </Button>
+                  <Button 
+                    onClick={downloadGeneratedPRD}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    <Download className="h-4 w-4 mr-1" />
+                    下载
+                  </Button>
+                </div>
+                <Button 
+                  onClick={() => {
+                    setWorkflowStage('welcome');
+                    setCurrentChapterIndex(0);
+                    setViewMode('single');
+                    setAnswers({});
+                    setContentReview(null);
+                    setGeneratedPRD('');
+                    setShowStartScreen(true);
+                    setShowWelcome(false);
+                    setShowChapters(false);
+                  }}
+                  variant="outline"
+                  className="border-gray-300"
                 >
-                  <Copy className="h-5 w-5" />
-                  复制
-                </button>
-                <button
-                  onClick={downloadPRD}
-                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 flex items-center gap-2 transition-colors duration-200"
-                >
-                  <Download className="h-5 w-5" />
-                  下载
-                </button>
-            </div>
-          </div>
-        </div>
-        
-        {/* Content */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
-          <MarkdownPreview content={completion} />
-        </div>
-        
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-200 text-center">
-          <button
-            onClick={restart}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-          >
-            撰写新PRD
-          </button>
-        </div>
-      </div>
+                  重新开始
+                </Button>
+              </div>
+            </ExpandableCardFooter>
+          </ExpandableContent>
+        </ExpandableCard>
+      </Expandable>
     </div>
   );
 
@@ -1673,16 +1927,72 @@ export default function PRDHouseViewV4() {
         answers,
         changeRecords,
         userScenarios,
-        iterationHistory
+        iterationHistory,
+        competitors,
+        requirementSolution
       });
       
       if (result.success && result.review) {
         setContentReview(result.review);
-        alert(`内容审查完成！评分: ${result.review.score}/100${result.review.summary ? '\n\n' + result.review.summary : ''}`);
+        setWorkflowStage('ai-review');
       }
     } catch (error) {
       alert('内容审查失败：' + (error instanceof Error ? error.message : String(error)));
     }
+  };
+
+  // 返回修改 - 显示所有卡片概览
+  const handleBackToModify = () => {
+    setViewMode('overview');
+    setWorkflowStage('guiding');
+  };
+
+  // 生成PRD
+  const handleGeneratePRD = async () => {
+    setWorkflowStage('prd-generation');
+    try {
+      const result = await callAI('generate-prd', {
+        answers,
+        changeRecords,
+        userScenarios,
+        iterationHistory,
+        competitors,
+        requirementSolution
+      });
+      
+      if (result.success && result.prd) {
+        setGeneratedPRD(result.prd);
+        setWorkflowStage('completed');
+      }
+    } catch (error) {
+      alert('PRD生成失败：' + (error instanceof Error ? error.message : String(error)));
+      setWorkflowStage('ai-review'); // 返回审查页面
+    }
+  };
+
+  // 选择卡片进入单个编辑模式
+  const handleSelectChapter = (chapterIndex: number) => {
+    setCurrentChapterIndex(chapterIndex);
+    setViewMode('single');
+  };
+
+  // 复制PRD
+  const copyGeneratedPRD = () => {
+    navigator.clipboard.writeText(generatedPRD);
+    alert('PRD已复制到剪贴板');
+  };
+
+  // 下载PRD
+  const downloadGeneratedPRD = () => {
+    const blob = new Blob([generatedPRD], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'PRD.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // 需求方案管理函数
@@ -1768,8 +2078,9 @@ export default function PRDHouseViewV4() {
         )}
         
         {workflowStage === 'guiding' && showChapters && renderChapterCards()}
-        {workflowStage === 'generating' && renderGeneratingView()}
-        {workflowStage === 'completed' && renderCompletedView()}
+        {workflowStage === 'ai-review' && renderAIReviewView()}
+        {workflowStage === 'prd-generation' && renderPRDGenerationView()}
+        {workflowStage === 'completed' && renderCompletedPRDView()}
 
         {/* Custom animations */}
         <style jsx>{`

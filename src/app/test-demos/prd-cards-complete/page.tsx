@@ -2075,6 +2075,266 @@ export default function PRDCardsCompletePage() {
               </div>
             );
           })}
+
+          {/* AI审查卡片 */}
+          <div className="bg-white rounded-lg shadow-sm border">
+            {/* 卡片头部 */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  contentReview ? 'bg-green-100' : 'bg-orange-100'
+                }`}>
+                  {contentReview && contentReview.isReadyForGeneration ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : contentReview ? (
+                    <AlertCircle className="h-5 w-5 text-yellow-600" />
+                  ) : (
+                    <Sparkles className="h-5 w-5 text-orange-600" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-gray-800">AI内容审查</h2>
+                  <p className="text-sm text-gray-500">智能检查PRD内容完整性和质量</p>
+                </div>
+                <div>
+                  {contentReview && (
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      contentReview.score >= 80 ? 'bg-green-100 text-green-600' : 
+                      contentReview.score >= 60 ? 'bg-yellow-100 text-yellow-600' : 
+                      'bg-red-100 text-red-600'
+                    }`}>
+                      {contentReview.score}/100
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* 卡片内容 */}
+            <div className="px-6 py-4">
+              {contentReview ? (
+                <div className="space-y-4">
+                  {/* 审查概要 */}
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">审查概要</h4>
+                    <p className="text-gray-600 text-sm">{contentReview.summary}</p>
+                  </div>
+                  
+                  {/* 问题清单 */}
+                  {contentReview.issues && contentReview.issues.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">发现的问题</h4>
+                      <div className="space-y-2">
+                        {contentReview.issues.map((issue, index) => (
+                          <div key={index} className={`p-3 rounded-lg border ${
+                            issue.level === 'error' ? 'bg-red-50 border-red-200' :
+                            issue.level === 'warning' ? 'bg-yellow-50 border-yellow-200' :
+                            'bg-blue-50 border-blue-200'
+                          }`}>
+                            <div className="font-medium text-sm">{issue.field}: {issue.message}</div>
+                            <div className="text-xs text-gray-600 mt-1">{issue.suggestion}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 改进建议 */}
+                  {contentReview.recommendations && contentReview.recommendations.length > 0 && (
+                    <div>
+                      <h4 className="font-medium text-gray-700 mb-2">改进建议</h4>
+                      <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                        {contentReview.recommendations.map((rec, index) => (
+                          <li key={index}>{rec}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">点击下方按钮开始AI内容审查</p>
+                  <Button 
+                    onClick={handleContentReview}
+                    disabled={isAILoading['review-content']}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    {isAILoading['review-content'] ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                    )}
+                    开始AI审查
+                  </Button>
+                </div>
+              )}
+              
+              {/* 卡片底部操作 */}
+              {contentReview && (
+                <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
+                  <Button 
+                    onClick={handleContentReview}
+                    disabled={isAILoading['review-content']}
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300"
+                  >
+                    {isAILoading['review-content'] ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                    )}
+                    重新审查
+                  </Button>
+                  
+                  <Button
+                    onClick={handlePRDGeneration}
+                    disabled={isAILoading['generate-prd']}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
+                    size="sm"
+                  >
+                    {isAILoading['generate-prd'] ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4 mr-2" />
+                    )}
+                    生成PRD
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* PRD生成/完成卡片 */}
+          <div className="bg-white rounded-lg shadow-sm border">
+            {/* 卡片头部 */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  generatedPRD ? 'bg-green-100' : 'bg-gray-100'
+                }`}>
+                  <FileText className={`h-5 w-5 ${
+                    generatedPRD ? 'text-green-600' : 'text-gray-400'
+                  }`} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-gray-800">完整PRD文档</h2>
+                  <p className="text-sm text-gray-500">AI生成的完整产品需求文档</p>
+                </div>
+                <div>
+                  {generatedPRD && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-600">
+                      已生成
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* 卡片内容 */}
+            <div className="px-6 py-4">
+              {generatedPRD ? (
+                <div className="space-y-4">
+                  {/* PRD预览 */}
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-2">PRD文档预览</h4>
+                    <div className="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto">
+                      <pre className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-12">
+                        {generatedPRD.length > 500 ? 
+                          generatedPRD.substring(0, 500) + '\n\n... (文档内容较长，请点击复制查看完整内容)' : 
+                          generatedPRD
+                        }
+                      </pre>
+                    </div>
+                  </div>
+                  
+                  {/* 文档统计 */}
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <div className="text-lg font-semibold text-blue-600">
+                        {generatedPRD.split('\n').length}
+                      </div>
+                      <div className="text-xs text-blue-600">行数</div>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <div className="text-lg font-semibold text-green-600">
+                        {generatedPRD.length}
+                      </div>
+                      <div className="text-xs text-green-600">字符数</div>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-lg">
+                      <div className="text-lg font-semibold text-purple-600">
+                        {Math.ceil(generatedPRD.length / 500)}
+                      </div>
+                      <div className="text-xs text-purple-600">估计页数</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-2">PRD文档尚未生成</p>
+                  <p className="text-xs text-gray-400 mb-4">请先完成内容审查，然后生成完整的PRD文档</p>
+                  
+                  {!contentReview ? (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-yellow-700 text-sm">
+                        <AlertCircle className="h-4 w-4 inline mr-1" />
+                        请先进行AI内容审查
+                      </p>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handlePRDGeneration}
+                      disabled={isAILoading['generate-prd']}
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                      {isAILoading['generate-prd'] ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 mr-2" />
+                      )}
+                      生成完整PRD
+                    </Button>
+                  )}
+                </div>
+              )}
+              
+              {/* 卡片底部操作 */}
+              {generatedPRD && (
+                <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
+                  <Button 
+                    onClick={() => navigator.clipboard.writeText(generatedPRD)}
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 flex-1"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    复制PRD
+                  </Button>
+                  
+                  <Button
+                    onClick={() => {
+                      const blob = new Blob([generatedPRD], { type: 'text/markdown' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'PRD.md';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                    size="sm"
+                  >
+                    下载PRD
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* 全局操作区域 */}

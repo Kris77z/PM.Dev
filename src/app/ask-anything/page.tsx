@@ -8,7 +8,7 @@ import { AGENT_PROMPTS, getAgentPrompt } from "@/config/prompts";
 import { DEFAULT_MODEL } from "@/config/models";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
 import PromptStashView from "@/components/prompt-stash/PromptStashView";
-import PRDHouseViewV4 from "@/components/prd-house/PRDHouseViewV4";
+import PRDHouseViewRefactored from "@/components/prd-house/PRDHouseViewRefactored";
 import { 
   MessageSquarePlus, 
   Clock, 
@@ -383,19 +383,19 @@ export default function AskAnythingPage() {
       title: "PRD 工具",
       description: AGENT_PROMPTS.prd.description,
       icon: <FileText className="h-4 w-4" />,
-      onClick: () => handleSendMessage(AGENT_PROMPTS.prd.defaultPrompt, selectedModel, 'prd')
+      onClick: () => switchView('prd-house')  // 直接切换到PRD工具视图
     },
     {
       title: "Prompt 工具",
       description: AGENT_PROMPTS.promptHouse.description,
       icon: <Lightbulb className="h-4 w-4" />,
-      onClick: () => handleSendMessage(AGENT_PROMPTS.promptHouse.defaultPrompt, selectedModel, 'promptHouse')
+      onClick: () => switchView('prompt-house')  // 直接切换到Prompt工具视图
     },
     {
       title: "原型工具",
       description: AGENT_PROMPTS.prototype.description,
       icon: <Layers className="h-4 w-4" />,
-      onClick: () => handleSendMessage(AGENT_PROMPTS.prototype.defaultPrompt, selectedModel, 'prototype')
+      onClick: () => switchView('prototype-house')  // 直接切换到原型工具视图
     }
   ];
 
@@ -683,7 +683,7 @@ export default function AskAnythingPage() {
           {/* PRD工具视图 */}
           {activeView === 'prd-house' && (
             <div className="flex-1 overflow-hidden -mx-6 -my-12">
-              <PRDHouseViewV4 />
+              <PRDHouseViewRefactored />
             </div>
           )}
 
