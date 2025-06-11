@@ -694,10 +694,10 @@ export default function PRDHouseViewRefactored() {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
       <div className="w-full max-w-4xl mx-auto">
         
-        {/* Alert 提示 - 居中显示 */}
+        {/* Alert 提示 - 顶部显示 */}
         {alertState.type && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-            <div className="pointer-events-auto animate-in fade-in-0 zoom-in-95 duration-300">
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none">
+            <div className="pointer-events-auto animate-in fade-in-0 slide-in-from-top-2 duration-300">
               {alertState.type === 'success' ? (
                 <AlertSuccess>{alertState.message}</AlertSuccess>
               ) : (
@@ -735,7 +735,7 @@ export default function PRDHouseViewRefactored() {
         {workflowStage === 'completed' && renderCompletedView()}
 
         {/* 自定义样式 */}
-        <style jsx>{`
+        <style>{`
           @keyframes card-appear {
             0% { opacity: 0; transform: translateY(30px) scale(0.95); }
             100% { opacity: 1; transform: translateY(0) scale(1); }

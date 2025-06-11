@@ -25,4 +25,7 @@ export default function PrototypeHouseView() {
           </div>
           <p className="text-sm text-gray-500 mt-4">功能开发中...</p>
         </div>
- 
+      </div>
+    </div>
+  );
+} 
