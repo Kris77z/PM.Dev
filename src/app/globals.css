@@ -1,6 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* 导入 highlight.js 代码高亮样式 */
+@import "highlight.js/styles/github-dark.css";
+
+/* 导入 markdown 样式 */
+@import "../styles/markdown.css";
+
+/* 导入消息组件样式 */
+@import "../styles/message.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -119,4 +128,24 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* 强制代码块在容器内换行显示 */
+.force-code-wrap pre {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  word-wrap: break-word !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.force-code-wrap code {
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  word-wrap: break-word !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
 }

@@ -6,4 +6,7 @@ psycopg2-binary
 langchain
 langgraph
 langchain-google-genai
-google-api-python-client httpx
+google-api-python-client
+httpx
+aiohttp
+asyncio

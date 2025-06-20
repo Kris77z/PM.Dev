@@ -1,5 +1,9 @@
-export { MessageItem } from './message-item';
-export { MarkdownContent } from './markdown-content';
-export { CodeBlock } from './code-block';
-export { CopyButton } from './copy-button';
-export { MessageActions } from './message-actions'; 
+// 新的增强消息系统
+export { EnhancedMessageItem } from './enhanced-message-item';
+
+// 消息块系统
+export * from './blocks';
+
+// 仍在使用的功能组件
+export { MessageActions } from './message-actions';
+export { CopyButton } from './copy-button'; 

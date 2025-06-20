@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Lightbulb, Loader2, MessageSquareText, ArrowLeft, PlusCircle, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Search, Lightbulb, Loader2, MessageSquareText, ArrowLeft, PlusCircle, AlertTriangle, Plus, Wand2 } from 'lucide-react';
 import { 
   PromptTemplate, 
   PromptVariable,
@@ -13,7 +13,8 @@ import {
 } from '@/data/prompt-templates';
 import TemplateCard from './TemplateCard';
 import { AnimatedAIInput } from '@/components/ui/animated-ai-input';
-import { MessageItem } from '@/components/message';
+import { EnhancedMessageItem } from '@/components/message/enhanced-message-item';
+import { Message, MessageBlock, MessageBlockType, MainTextMessageBlock } from '@/types/message';
 import { DEFAULT_MODEL } from '@/config/models';
 
 // 定义消息类型
@@ -37,6 +38,47 @@ export default function PromptHouseView() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // 增强消息系统状态
+  const [enhancedMessages, setEnhancedMessages] = useState<Message[]>([]);
+  const [messageBlocks, setMessageBlocks] = useState<Record<string, MessageBlock>>({});
+
+  // 将旧消息转换为增强消息系统
+  const convertToEnhancedMessages = useCallback((oldMessages: ChatMessage[]) => {
+    const newMessages: Message[] = [];
+    const newBlocks: Record<string, MessageBlock> = {};
+
+    oldMessages.forEach(oldMessage => {
+      // 创建消息块
+      const blockId = `${oldMessage.id}-text`;
+      const textBlock: MainTextMessageBlock = {
+        id: blockId,
+        type: MessageBlockType.MAIN_TEXT,
+        content: oldMessage.content,
+        createdAt: oldMessage.timestamp
+      };
+
+      // 创建消息
+      const newMessage: Message = {
+        id: oldMessage.id,
+        role: oldMessage.role as 'user' | 'assistant' | 'system',
+        blocks: [blockId],
+        timestamp: oldMessage.timestamp,
+        isGenerating: oldMessage.isGenerating
+      };
+
+      newMessages.push(newMessage);
+      newBlocks[blockId] = textBlock;
+    });
+
+    setEnhancedMessages(newMessages);
+    setMessageBlocks(newBlocks);
+  }, []);
+
+  // 监听消息变化并转换
+  useEffect(() => {
+    convertToEnhancedMessages(messages);
+  }, [messages, convertToEnhancedMessages]);
 
   // New state variables for async loading
   const [allTemplates, setAllTemplates] = useState<PromptTemplate[]>([]);
@@ -474,7 +516,7 @@ export default function PromptHouseView() {
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto p-6 space-y-6"
             >
-              {messages.length === 0 ? (
+              {enhancedMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <div className="bg-gray-50 rounded-full p-4 mb-4">
                     <MessageSquareText className="h-8 w-8 text-gray-400" />
@@ -487,14 +529,13 @@ export default function PromptHouseView() {
                   </p>
                 </div>
               ) : (
-                messages.map((message) => (
-                  <MessageItem
+                enhancedMessages.map((message) => (
+                  <EnhancedMessageItem
                     key={message.id}
-                    id={message.id}
-                    role={message.role}
-                    content={message.content}
-                    timestamp={message.timestamp}
+                    message={message}
+                    blocks={messageBlocks}
                     isGenerating={message.isGenerating}
+                    onBlockEdit={() => {}}
                   />
                 ))
               )}

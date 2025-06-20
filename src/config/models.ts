@@ -128,23 +128,13 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
     hasWebSearch: true, // Gemini 2.0支持Google Search Grounding
   },
   // Gemini 2.5 系列模型
-  'gemini-2.5-flash-preview-05-20': {
-    id: 'gemini-2.5-flash-preview-05-20',
-    name: 'Gemini 2.5 Flash Preview',
+  'gemini-2.5-pro': {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
     provider: 'google',
     apiKey: process.env.GEMINI_API_KEY || '',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    model: 'gemini-2.5-flash-preview-05-20',
-    supportsStreaming: true,
-    hasWebSearch: true,
-  },
-  'gemini-2.5-pro-preview-06-05': {
-    id: 'gemini-2.5-pro-preview-06-05',
-    name: 'Gemini 2.5 Pro Preview',
-    provider: 'google',
-    apiKey: process.env.GEMINI_API_KEY || '',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    model: 'gemini-2.5-pro-preview-06-05',
+    model: 'gemini-2.5-pro',
     supportsStreaming: true,
     hasWebSearch: true,
   },
@@ -201,13 +191,13 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
   },
   'deepseek-r1': {
     id: 'deepseek-r1',
-    name: 'DeepSeek: R1 0528',
+    name: 'DeepSeek-R1 (🎯 推理专家)',
     provider: 'openrouter',
     apiKey: process.env.OPENROUTER_API_KEY || '',
     baseUrl: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
     model: 'deepseek/deepseek-r1-0528:free',
     supportsStreaming: true,
-    hasWebSearch: false, // DeepSeek暂不支持网络搜索
+    hasWebSearch: false, // R1专注推理，不支持搜索
   },
 };
 

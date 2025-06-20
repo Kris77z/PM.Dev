@@ -73,6 +73,8 @@ interface AnimatedAIInputProps {
     onModelChange?: (modelId: string) => void;
     webSearchEnabled?: boolean;
     onWebSearchToggle?: (enabled: boolean) => void;
+    hideModelSelector?: boolean;
+    hideSearchIcon?: boolean;
 }
 
 export function AnimatedAIInput({ 
@@ -82,7 +84,9 @@ export function AnimatedAIInput({
     selectedModel: externalSelectedModel,
     onModelChange,
     webSearchEnabled = false,
-    onWebSearchToggle
+    onWebSearchToggle,
+    hideModelSelector = false,
+    hideSearchIcon = false
 }: AnimatedAIInputProps) {
     const [value, setValue] = useState("");
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({
@@ -95,8 +99,7 @@ export function AnimatedAIInput({
         "GPT-4o": "gpt-4o",
         "Claude-3.7-Sonnet": "claude-3.7-sonnet",
         "Gemini-2.0-Flash": "gemini-2.0-flash",
-        "gemini-2.5-flash-preview-05-20": "gemini-2.5-flash-preview-05-20",
-        "gemini-2.5-pro-preview-06-05": "gemini-2.5-pro-preview-06-05",
+        "Gemini-2.5-Pro": "gemini-2.5-pro",
         "DeepSeek: R1 0528": "deepseek-r1",
     };
 
@@ -105,8 +108,7 @@ export function AnimatedAIInput({
         "gpt-4o": "GPT-4o",
         "claude-3.7-sonnet": "Claude-3.7-Sonnet",
         "gemini-2.0-flash": "Gemini-2.0-Flash",
-        "gemini-2.5-flash-preview-05-20": "gemini-2.5-flash-preview-05-20",
-        "gemini-2.5-pro-preview-06-05": "gemini-2.5-pro-preview-06-05",
+        "gemini-2.5-pro": "Gemini-2.5-Pro",
         "deepseek-r1": "DeepSeek: R1 0528",
     };
 
@@ -120,12 +122,18 @@ export function AnimatedAIInput({
 
     const [selectedModel, setSelectedModel] = useState(getInitialModelName());
 
+    // 同步外部模型状态变化
+    useEffect(() => {
+        if (externalSelectedModel && MODEL_ID_TO_NAME[externalSelectedModel]) {
+            setSelectedModel(MODEL_ID_TO_NAME[externalSelectedModel]);
+        }
+    }, [externalSelectedModel]);
+
     const AI_MODELS = [
         "GPT-4o",
         "Claude-3.7-Sonnet",
         "Gemini-2.0-Flash",
-        "Gemini-2.5-Flash-preview-05-20",
-        "Gemini-2.5-Pro-preview-06-05",
+        "Gemini-2.5-Pro",
         "DeepSeek: R1 0528",
     ];
 
@@ -151,14 +159,7 @@ export function AnimatedAIInput({
                 className="w-4 h-4"
             />
         ),
-        "Gemini-2.5-Flash-preview-05-20": (
-            <img 
-                src="/icons/gemini.svg"
-                alt="Gemini"
-                className="w-4 h-4"
-            />
-        ),
-        "Gemini-2.5-Pro-preview-06-05": (
+        "Gemini-2.5-Pro": (
             <img 
                 src="/icons/gemini.svg"
                 alt="Gemini"
@@ -183,14 +184,15 @@ export function AnimatedAIInput({
 
     const handleSend = () => {
         if (!value.trim() || disabled) return;
-        const modelId = MODEL_NAME_TO_ID[selectedModel] || "gpt-4o";
-        onSendMessage(value.trim(), modelId, webSearchEnabled);
+        // 优先使用外部状态，确保同步
+        const currentModelId = externalSelectedModel || MODEL_NAME_TO_ID[selectedModel] || "gpt-4o";
+        onSendMessage(value.trim(), currentModelId, webSearchEnabled);
         setValue("");
         adjustHeight(true);
     };
 
-    // 检查是否显示Web Search按钮 (Gemini系列模型都支持)
-    const showWebSearchButton = selectedModel.startsWith("Gemini-");
+    // 检查是否显示Web Search按钮 (Gemini系列模型都支持，但可以通过 hideSearchIcon 隐藏)
+    const showWebSearchButton = selectedModel.startsWith("Gemini-") && !hideSearchIcon;
 
     const handleWebSearchToggle = () => {
         onWebSearchToggle?.(!webSearchEnabled);
@@ -232,67 +234,71 @@ export function AnimatedAIInput({
                         <div className="h-14 bg-black/5 dark:bg-white/5 rounded-b-xl flex items-center">
                             <div className="absolute left-3 right-3 bottom-3 flex items-center justify-between w-[calc(100%-24px)]">
                                 <div className="flex items-center gap-2">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                className="flex items-center gap-1 h-8 pl-1 pr-2 text-xs rounded-md dark:text-white hover:bg-black/10 dark:hover:bg-white/10 focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-blue-500"
-                                            >
-                                                <AnimatePresence mode="wait">
-                                                    <motion.div
-                                                        key={selectedModel}
-                                                        initial={{
-                                                            opacity: 0,
-                                                            y: -5,
-                                                        }}
-                                                        animate={{
-                                                            opacity: 1,
-                                                            y: 0,
-                                                        }}
-                                                        exit={{
-                                                            opacity: 0,
-                                                            y: 5,
-                                                        }}
-                                                        transition={{
-                                                            duration: 0.15,
-                                                        }}
-                                                        className="flex items-center gap-1"
+                                    {!hideModelSelector && (
+                                        <>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="flex items-center gap-1 h-8 pl-1 pr-2 text-xs rounded-md dark:text-white hover:bg-black/10 dark:hover:bg-white/10 focus-visible:ring-1 focus-visible:ring-offset-0 focus-visible:ring-blue-500"
                                                     >
-                                                        {MODEL_ICONS[selectedModel]}
-                                                        {selectedModel}
-                                                        <ChevronDown className="w-3 h-3 opacity-50" />
-                                                    </motion.div>
-                                                </AnimatePresence>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent
-                                            className={cn(
-                                                "min-w-[10rem]",
-                                                "border-black/10 dark:border-white/10",
-                                                "bg-gradient-to-b from-white via-white to-neutral-100 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-800"
-                                            )}
-                                        >
-                                            {AI_MODELS.map((model) => (
-                                                <DropdownMenuItem
-                                                    key={model}
-                                                    onSelect={() =>
-                                                        handleModelChange(model)
-                                                    }
-                                                    className="flex items-center justify-between gap-2"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        {MODEL_ICONS[model]}
-                                                        <span>{model}</span>
-                                                    </div>
-                                                    {selectedModel ===
-                                                        model && (
-                                                        <Check className="w-4 h-4 text-blue-500" />
+                                                        <AnimatePresence mode="wait">
+                                                            <motion.div
+                                                                key={selectedModel}
+                                                                initial={{
+                                                                    opacity: 0,
+                                                                    y: -5,
+                                                                }}
+                                                                animate={{
+                                                                    opacity: 1,
+                                                                    y: 0,
+                                                                }}
+                                                                exit={{
+                                                                    opacity: 0,
+                                                                    y: 5,
+                                                                }}
+                                                                transition={{
+                                                                    duration: 0.15,
+                                                                }}
+                                                                className="flex items-center gap-1"
+                                                            >
+                                                                {MODEL_ICONS[selectedModel]}
+                                                                {selectedModel}
+                                                                <ChevronDown className="w-3 h-3 opacity-50" />
+                                                            </motion.div>
+                                                        </AnimatePresence>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    className={cn(
+                                                        "min-w-[10rem]",
+                                                        "border-black/10 dark:border-white/10",
+                                                        "bg-gradient-to-b from-white via-white to-neutral-100 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-800"
                                                     )}
-                                                </DropdownMenuItem>
-                                            ))}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <div className="h-4 w-px bg-black/10 dark:bg-white/10 mx-0.5" />
+                                                >
+                                                    {AI_MODELS.map((model) => (
+                                                        <DropdownMenuItem
+                                                            key={model}
+                                                            onSelect={() =>
+                                                                handleModelChange(model)
+                                                            }
+                                                            className="flex items-center justify-between gap-2"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                {MODEL_ICONS[model]}
+                                                                <span>{model}</span>
+                                                            </div>
+                                                            {selectedModel ===
+                                                                model && (
+                                                                <Check className="w-4 h-4 text-blue-500" />
+                                                            )}
+                                                        </DropdownMenuItem>
+                                                    ))}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                            <div className="h-4 w-px bg-black/10 dark:bg-white/10 mx-0.5" />
+                                        </>
+                                    )}
                                     
                                     {/* Web Search 按钮 - 只有选择Gemini-2.0-Flash时显示 */}
                                     {showWebSearchButton && (

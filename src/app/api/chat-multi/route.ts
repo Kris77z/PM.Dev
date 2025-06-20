@@ -25,26 +25,28 @@ function buildRequestBody(config: ModelConfig, messages: ChatMessage[], context?
 
   switch (config.provider) {
     case 'google':
-      // Gemini API 使用不同的格式 - 修复为正确格式
-      const contents = finalMessages
-        .filter(msg => msg.role !== 'system') // Gemini不支持system role
-        .map(msg => ({
-          role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: msg.content }]
-        }));
-      
-      // 如果有system消息，将其合并到第一个user消息中
+      // Gemini API 格式 - 简化为最后一条用户消息
       const systemMessage = finalMessages.find(msg => msg.role === 'system');
-      if (systemMessage && contents.length > 0 && contents[0].role === 'user') {
-        contents[0].parts[0].text = `${systemMessage.content}\n\n${contents[0].parts[0].text}`;
+      const lastUserMessage = finalMessages.filter(msg => msg.role === 'user').pop();
+      
+      if (!lastUserMessage) {
+        throw new Error('Gemini API需要至少一条用户消息');
       }
+      
+      // 只发送最后一条用户消息，合并system消息
+      let text = lastUserMessage.content;
+      if (systemMessage) {
+        text = `${systemMessage.content}\n\n${text}`;
+      }
+      
+      const contents = [
+        {
+          parts: [{ text: text }]
+        }
+      ];
 
       const geminiBody: Record<string, unknown> = {
-        contents,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048,
-        }
+        contents
       };
 
       // 为Gemini配置web search工具
@@ -245,51 +247,40 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // 转换为OpenAI格式的流式响应
+        // 转换为OpenAI格式的流式响应 - 直接发送完整内容
         const stream = new ReadableStream({
           start(controller) {
-            // 分块发送内容以模拟流式响应
-            const chunks = content.split('');
-            let index = 0;
-            
-            const sendChunk = () => {
-              if (index < chunks.length) {
-                const chunk = {
-                  id: `chatcmpl-${Date.now()}`,
-                  object: 'chat.completion.chunk',
-                  created: Math.floor(Date.now() / 1000),
-                  model: config.model,
-                  choices: [{
-                    index: 0,
-                    delta: { content: chunks[index] },
-                    finish_reason: null
-                  }]
-                };
-                
-                controller.enqueue(`data: ${JSON.stringify(chunk)}\n\n`);
-                index++;
-                setTimeout(sendChunk, 20); // 20ms延迟模拟打字效果
-              } else {
-                // 发送结束标记
-                const finalChunk = {
-                  id: `chatcmpl-${Date.now()}`,
-                  object: 'chat.completion.chunk',
-                  created: Math.floor(Date.now() / 1000),
-                  model: config.model,
-                  choices: [{
-                    index: 0,
-                    delta: {},
-                    finish_reason: 'stop'
-                  }]
-                };
-                
-                controller.enqueue(`data: ${JSON.stringify(finalChunk)}\n\n`);
-                controller.enqueue('data: [DONE]\n\n');
-                controller.close();
-              }
+            // 发送完整内容
+            const chunk = {
+              id: `chatcmpl-${Date.now()}`,
+              object: 'chat.completion.chunk',
+              created: Math.floor(Date.now() / 1000),
+              model: config.model,
+              choices: [{
+                index: 0,
+                delta: { content: content },
+                finish_reason: null
+              }]
             };
             
-            sendChunk();
+            controller.enqueue(`data: ${JSON.stringify(chunk)}\n\n`);
+            
+            // 发送结束标记
+            const finalChunk = {
+              id: `chatcmpl-${Date.now()}`,
+              object: 'chat.completion.chunk',
+              created: Math.floor(Date.now() / 1000),
+              model: config.model,
+              choices: [{
+                index: 0,
+                delta: {},
+                finish_reason: 'stop'
+              }]
+            };
+            
+            controller.enqueue(`data: ${JSON.stringify(finalChunk)}\n\n`);
+            controller.enqueue('data: [DONE]\n\n');
+            controller.close();
           }
         });
 

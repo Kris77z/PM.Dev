@@ -6,11 +6,12 @@ import { cn } from "@/lib/utils";
 import { getAllTemplates, searchTemplatesInList } from '@/data/prompt-templates';
 import { PromptCard, ExtendedPromptTemplate } from './PromptCard';
 import { AnimatedAIInput } from '@/components/ui/animated-ai-input';
-import { MessageItem } from '@/components/message/message-item';
+import { EnhancedMessageItem } from '@/components/message/enhanced-message-item';
+import { Message, MessageBlock, MessageBlockType, MainTextMessageBlock } from '@/types/message';
 import CreatePromptDialog from './CreatePromptDialog';
 
 // Default model for chat
-const DEFAULT_MODEL = 'gpt-4o-mini';
+const DEFAULT_MODEL = 'gpt-4o';
 
 // 聊天消息接口
 interface ChatMessage {
@@ -95,6 +96,47 @@ export default function PromptStashView() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // 增强消息系统状态
+  const [enhancedMessages, setEnhancedMessages] = useState<Message[]>([]);
+  const [messageBlocks, setMessageBlocks] = useState<Record<string, MessageBlock>>({});
+
+  // 将旧消息转换为增强消息系统
+  const convertToEnhancedMessages = useCallback((oldMessages: ChatMessage[]) => {
+    const newMessages: Message[] = [];
+    const newBlocks: Record<string, MessageBlock> = {};
+
+    oldMessages.forEach(oldMessage => {
+      // 创建消息块
+      const blockId = `${oldMessage.id}-text`;
+      const textBlock: MainTextMessageBlock = {
+        id: blockId,
+        type: MessageBlockType.MAIN_TEXT,
+        content: oldMessage.content,
+        createdAt: oldMessage.timestamp
+      };
+
+      // 创建消息
+      const newMessage: Message = {
+        id: oldMessage.id,
+        role: oldMessage.role as 'user' | 'assistant' | 'system',
+        blocks: [blockId],
+        timestamp: oldMessage.timestamp,
+        isGenerating: oldMessage.isGenerating
+      };
+
+      newMessages.push(newMessage);
+      newBlocks[blockId] = textBlock;
+    });
+
+    setEnhancedMessages(newMessages);
+    setMessageBlocks(newBlocks);
+  }, []);
+
+  // 监听消息变化并转换
+  useEffect(() => {
+    convertToEnhancedMessages(messages);
+  }, [messages, convertToEnhancedMessages]);
 
   // 拖拽调整相关状态
   const [leftWidth, setLeftWidth] = useState(800); // 初始宽度 800px
@@ -478,7 +520,7 @@ export default function PromptStashView() {
               ref={scrollContainerRef}
               className="flex-1 overflow-y-auto p-4 space-y-4"
             >
-              {messages.length === 0 ? (
+              {enhancedMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center mb-4">
                     <MessageCircle className="w-8 h-8 text-orange-600" />
@@ -495,14 +537,13 @@ export default function PromptStashView() {
                   </div>
                 </div>
               ) : (
-                messages.map((message) => (
-                  <MessageItem
+                enhancedMessages.map((message) => (
+                  <EnhancedMessageItem
                     key={message.id}
-                    id={message.id}
-                    role={message.role}
-                    content={message.content}
-                    timestamp={message.timestamp}
+                    message={message}
+                    blocks={messageBlocks}
                     isGenerating={message.isGenerating}
+                    onBlockEdit={() => {}}
                   />
                 ))
               )}

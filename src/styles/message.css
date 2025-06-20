@@ -1,0 +1,240 @@
+/* 增强消息系统样式 */
+.markdown-content {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  color: inherit;
+}
+
+/* 确保所有子元素继承字体样式 */
+.markdown-content * {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* 标题样式重置 */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  font-family: inherit;
+  line-height: 1.4;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content h1:first-child,
+.markdown-content h2:first-child,
+.markdown-content h3:first-child,
+.markdown-content h4:first-child,
+.markdown-content h5:first-child,
+.markdown-content h6:first-child {
+  margin-top: 0;
+}
+
+/* 段落样式 */
+.markdown-content p {
+  margin-bottom: 0.75rem;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* 列表样式 */
+.markdown-content ul,
+.markdown-content ol {
+  margin-bottom: 0.75rem;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.markdown-content ul:last-child,
+.markdown-content ol:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content li {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 0.25rem;
+}
+
+/* 强调文本样式 */
+.markdown-content strong,
+.markdown-content b {
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.markdown-content em,
+.markdown-content i {
+  font-size: inherit;
+  font-style: italic;
+}
+
+/* 内联代码样式 */
+.markdown-content code:not([class*="language-"]) {
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  padding: 2px 6px;
+  background-color: rgba(175, 184, 193, 0.2);
+  border-radius: 4px;
+  color: #d73a49;
+}
+
+/* 深色模式下的内联代码 */
+.dark .markdown-content code:not([class*="language-"]) {
+  background-color: rgba(110, 118, 129, 0.4);
+  color: #f85149;
+}
+
+/* 引用块样式 */
+.markdown-content blockquote {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 4px solid #d1d5db;
+  color: #6b7280;
+}
+
+.dark .markdown-content blockquote {
+  border-left-color: #4b5563;
+  color: #9ca3af;
+}
+
+/* 表格样式优化 */
+.markdown-content table {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 1rem 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 确保数学公式的字体大小 */
+.markdown-content .katex {
+  font-size: 1em;
+}
+
+/* 消息气泡内的特殊样式调整 */
+.bg-gray-100 .markdown-content,
+.bg-gray-800 .markdown-content {
+  color: inherit;
+}
+
+/* 链接样式 */
+.markdown-content a {
+  font-size: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(59, 130, 246, 0.5);
+}
+
+.markdown-content a:hover {
+  text-decoration-color: rgba(59, 130, 246, 1);
+}
+
+/* 水平分割线 */
+.markdown-content hr {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark .markdown-content hr {
+  border-top-color: #374151;
+}
+
+/* 代码块宽度控制 */
+.markdown-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* 确保代码块不会突破容器宽度 */
+.markdown-content pre[class*="language-"] {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0;
+}
+
+/* 代码块内的代码样式 */
+.markdown-content pre code {
+  white-space: pre;
+  word-break: normal;
+  word-wrap: normal;
+  overflow-wrap: normal;
+}
+
+/* 增强消息容器宽度控制 */
+.enhanced-message-container {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.enhanced-message-container > * {
+  max-width: 100%;
+}
+
+/* 代码块组件宽度控制 */
+.code-block-container {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.code-block-container .overflow-x-auto {
+  max-width: 100%;
+}
+
+.code-block-container pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* 语法高亮器容器的宽度控制 */
+.react-syntax-highlighter-container {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* 滚动条样式美化 */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* 深色模式下的滚动条 */
+.dark .overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .overflow-x-auto::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.dark .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+} 
