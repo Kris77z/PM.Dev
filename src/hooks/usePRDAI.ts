@@ -62,13 +62,13 @@ export function usePRDAI() {
       iterationHistory: IterationHistory[];
       requirementSolution: RequirementSolution;
       handleAnswerChange: (questionId: string, value: string) => void;
-      handleUserScenarioAction: (action: string, data?: unknown) => void;
-      handleCompetitorAction: (action: string, data?: unknown) => void;
+      handleUserScenarioAction: (action: 'add' | 'remove' | 'update' | 'replace', index?: number, field?: keyof UserScenario, value?: string | UserScenario[]) => void;
+      handleCompetitorAction: (action: 'add' | 'remove' | 'update' | 'replace', index?: number, field?: keyof CompetitorItem, value?: string | CompetitorItem[]) => void;
       setUserScenarios: (scenarios: UserScenario[]) => void;
       setCompetitors: (competitors: CompetitorItem[]) => void;
-      handleChangeRecordAction: (action: string, data?: unknown) => void;
-      handleIterationHistoryAction: (action: string, data?: unknown) => void;
-      handleRequirementSolutionAction: (action: string, data?: unknown) => void;
+      handleChangeRecordAction: (action: 'add' | 'remove' | 'update', index?: number, field?: keyof ChangeRecord, value?: string) => void;
+      handleIterationHistoryAction: (action: 'add' | 'remove' | 'update', index?: number, field?: keyof IterationHistory, value?: string) => void;
+      handleRequirementSolutionAction: (action: 'add' | 'remove' | 'update' | 'updatePrototype', index?: number, field?: string, value?: string) => void;
     }
   ): Promise<boolean> => {
     if (!context) return false;

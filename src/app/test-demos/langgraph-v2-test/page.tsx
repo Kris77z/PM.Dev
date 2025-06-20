@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Search, Brain, Loader2, CheckCircle, AlertCircle, BarChart3, RefreshCw, Play, Square, Zap, Target, Layers, Sparkles, Settings, GitCompare, Activity, Cpu, Clock, TrendingUp } from "lucide-react";
+import { ArrowLeft, Search, Brain, Loader2, CheckCircle, AlertCircle, BarChart3, RefreshCw, Play, Square, Zap, Target, Layers, Sparkles, Settings, /* GitCompare, */ Activity, Cpu, Clock, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input";
 
 // V2 LangGraph 执行状态类型
 interface V2LangGraphStep {
@@ -80,6 +80,7 @@ interface AdvancedConfig {
 }
 
 // 性能监控组件
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PerformanceMonitor: React.FC<{ session: V2ResearchSession | null }> = ({ session }) => {
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     apiCallCount: 0,
@@ -182,6 +183,7 @@ const PerformanceMonitor: React.FC<{ session: V2ResearchSession | null }> = ({ s
 };
 
 // 高级配置面板组件
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AdvancedConfigPanel: React.FC<{
   config: AdvancedConfig;
   onConfigChange: (config: AdvancedConfig) => void;
@@ -336,6 +338,7 @@ export default function LangGraphV2TestPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // 新增：高级配置状态
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [advancedConfig, setAdvancedConfig] = useState<AdvancedConfig>({
     enableParallelSearch: true,
     enableContentEnhancement: true,

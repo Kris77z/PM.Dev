@@ -1,10 +1,31 @@
 // 历史对话管理工具
+import { 
+  Model, 
+  MultiModelMessageStyle 
+} from '@/types/message';
+import { ResearchLangGraphStep } from '@/types/research';
 
 export interface ChatMessage {
   id: string;
-  role: "user" | "assistant";
-  content: string;
+  role: "user" | "assistant" | "system";
+  content?: string; // 保持向后兼容
+  blocks: string[]; // 消息块ID数组（与Message一致）
   timestamp: Date;
+  isGenerating?: boolean;
+  
+  // 扩展属性（与Message一致）
+  mentions?: Model[];
+  multiModelMessageStyle?: MultiModelMessageStyle;
+  foldSelected?: boolean;
+  askId?: string; // 用于分组
+  
+  // Agent Plan 支持
+  agentPlan?: {
+    steps: ResearchLangGraphStep[];
+    currentStep?: string;
+    status: 'running' | 'completed' | 'error';
+    finalReport?: string;
+  };
 }
 
 export interface ChatSession {

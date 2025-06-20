@@ -237,8 +237,8 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        const result = await response.body.json();
-        const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        const result = await response.body.json() as Record<string, unknown>;
+        const content = (result.candidates as Array<{content: {parts: Array<{text: string}>}}>)?.[0]?.content?.parts?.[0]?.text;
         
         if (!content) {
           return NextResponse.json(

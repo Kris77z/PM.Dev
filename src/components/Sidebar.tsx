@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { MessageSquare, Wand2, FileText, Layers, Infinity } from 'lucide-react'
-import { ViewType } from '@/app/page'
+import type { ViewType } from '@/types/research'
 
 interface SidebarProps {
   activeView: ViewType
@@ -17,7 +17,7 @@ const menuItems = [
     description: '与 AI 助手对话'
   },
   {
-    id: 'prompt-house' as ViewType,
+    id: 'prompt-stash' as ViewType,
     label: 'Prompt 工具',
     icon: Wand2,
     description: '智能提示词模板'

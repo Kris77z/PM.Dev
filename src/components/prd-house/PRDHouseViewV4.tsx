@@ -591,11 +591,9 @@ export default function PRDHouseViewV4() {
    };
 
   const generatePRD = (e: React.FormEvent<HTMLFormElement>) => {
-    setWorkflowStage('generating');
+    setWorkflowStage('prd-generation');
     // 使用 aihooks 的 handleSubmit
-    handleSubmit(e, {
-      body: { answers, chapters }
-    });
+    handleSubmit(e);
   };
 
 

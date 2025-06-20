@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { Message, ResearchSession, LangGraphStep } from "@/types/research";
+import type { ResearchSession, ResearchLangGraphStep } from "@/types/research";
+import type { Message } from "@/types/message";
 
 // 研究历史数据类型
 export interface ResearchHistorySession {
@@ -77,6 +78,7 @@ export const useAgentResearch = () => {
       role: 'assistant',
       content: '你好！我是您的 AI 深度研究助手，专门使用 Gemini 2.0 Flash 模型为您提供专业的研究服务。我可以帮助您：\n\n🔍 深度研究任何主题\n📊 生成专业分析报告\n🌐 搜索最新资料信息\n📝 整合多源数据分析\n💡 提供专业见解总结\n\n请告诉我您想要研究的主题，我将调用专业的 Agent 工具链为您进行全面的调研分析。',
       timestamp: new Date(),
+      blocks: [] // 添加必需的 blocks 属性
     }
   ]);
   
@@ -124,6 +126,7 @@ export const useAgentResearch = () => {
         role: 'assistant',
         content: '你好！我是您的 AI 深度研究助手，专门使用 Gemini 2.0 Flash 模型为您提供专业的研究服务。我可以帮助您：\n\n🔍 深度研究任何主题\n📊 生成专业分析报告\n🌐 搜索最新资料信息\n📝 整合多源数据分析\n💡 提供专业见解总结\n\n请告诉我您想要研究的主题，我将调用专业的 Agent 工具链为您进行全面的调研分析。',
         timestamp: new Date(),
+        blocks: []
       },
       ...session.messages
     ]);
@@ -149,6 +152,7 @@ export const useAgentResearch = () => {
         role: 'assistant',
         content: '你好！我是您的 AI 深度研究助手，专门使用 Gemini 2.0 Flash 模型为您提供专业的研究服务。我可以帮助您：\n\n🔍 深度研究任何主题\n📊 生成专业分析报告\n🌐 搜索最新资料信息\n📝 整合多源数据分析\n💡 提供专业见解总结\n\n请告诉我您想要研究的主题，我将调用专业的 Agent 工具链为您进行全面的调研分析。',
         timestamp: new Date(),
+        blocks: []
       }
     ]);
     setCurrentResearchSession(null);
@@ -166,6 +170,7 @@ export const useAgentResearch = () => {
       role: 'user',
       content: userInput,
       timestamp: new Date(),
+      blocks: []
     };
 
     const assistantMessageId = Date.now().toString() + '-assistant';
@@ -175,9 +180,10 @@ export const useAgentResearch = () => {
       content: '',
       timestamp: new Date(),
       isGenerating: true,
+      blocks: [],
       agentPlan: {
         steps: [],
-        status: 'running',
+        status: 'running' as const,
         currentStep: 'research-planning'
       }
     };
@@ -189,7 +195,7 @@ export const useAgentResearch = () => {
     const newSession: ResearchSession = {
       id: Date.now().toString(),
       query: userInput.trim(),
-      status: 'running',
+      status: 'running' as const,
       startTime: new Date(),
       totalCycles: 1, // 固定使用1轮研究
       currentStep: 'research-planning',
@@ -261,7 +267,7 @@ export const useAgentResearch = () => {
                 setCurrentResearchSession(prev => {
                   if (!prev) return null;
                   
-                  const reportCompleteStep: LangGraphStep = {
+                  const reportCompleteStep: ResearchLangGraphStep = {
                     type: 'step_complete',
                     step: 'report-generation',
                     cycle: 1,
@@ -277,7 +283,7 @@ export const useAgentResearch = () => {
                   
                   return {
                     ...prev,
-                    status: 'completed',
+                    status: 'completed' as const,
                     endTime: new Date(),
                     currentStep: 'report-generation',
                     report: data.report,
@@ -295,7 +301,7 @@ export const useAgentResearch = () => {
                           isGenerating: false,
                           agentPlan: {
                             steps: [...(msg.agentPlan?.steps || []), {
-                              type: 'step_complete',
+                              type: 'step_complete' as const,
                               step: 'report-generation',
                               cycle: 1,
                               title: '研究报告完成',
@@ -303,7 +309,7 @@ export const useAgentResearch = () => {
                               details: [],
                               timestamp: new Date()
                             }],
-                            status: 'completed',
+                            status: 'completed' as const,
                             currentStep: 'report-generation', // 确保currentStep正确
                             finalReport: data.report
                           }
@@ -320,7 +326,7 @@ export const useAgentResearch = () => {
                 // 发生错误
                 setCurrentResearchSession(prev => prev ? {
                   ...prev,
-                  status: 'error',
+                  status: 'error' as const,
                   endTime: new Date(),
                   error: data.details
                 } : null);
@@ -334,7 +340,7 @@ export const useAgentResearch = () => {
                           isGenerating: false,
                           agentPlan: {
                             steps: msg.agentPlan?.steps || [],
-                            status: 'error'
+                            status: 'error' as const
                           }
                         }
                       : msg
@@ -342,7 +348,7 @@ export const useAgentResearch = () => {
                 );
               } else if (data.type === 'step_update' || data.type === 'step_complete') {
                 // 🔥 优先处理简化的步骤更新
-                const stepInfo: LangGraphStep = {
+                const stepInfo: ResearchLangGraphStep = {
                   type: data.type as 'step_start' | 'step_complete' | 'step_error' | 'step_progress',
                   step: data.step,
                   cycle: 1,
@@ -380,7 +386,7 @@ export const useAgentResearch = () => {
                           ...msg, 
                           agentPlan: {
                             steps: [...(msg.agentPlan?.steps || []), stepInfo],
-                            status: 'running',
+                            status: 'running' as const,
                             currentStep: data.currentStep || data.step
                           }
                         }
@@ -390,7 +396,7 @@ export const useAgentResearch = () => {
               } else {
                 // 处理其他复杂的步骤信息（向后兼容）
                 if (data.user_friendly && data.step && data.title) {
-                  const stepInfo: LangGraphStep = {
+                  const stepInfo: ResearchLangGraphStep = {
                     type: data.type as 'step_start' | 'step_complete' | 'step_error' | 'step_progress',
                     step: data.step,
                     cycle: 1,
@@ -437,7 +443,7 @@ export const useAgentResearch = () => {
                             ...msg, 
                             agentPlan: {
                               steps: [...(msg.agentPlan?.steps || []), stepInfo],
-                              status: 'running',
+                              status: 'running' as const,
                               currentStep: data.currentStep || data.step
                             }
                           }
@@ -457,7 +463,7 @@ export const useAgentResearch = () => {
       console.error('Agent研究任务执行失败:', error);
       setCurrentResearchSession(prev => prev ? {
         ...prev,
-        status: 'error',
+        status: 'error' as const,
         endTime: new Date(),
         error: error instanceof Error ? error.message : '未知错误'
       } : null);
@@ -471,7 +477,7 @@ export const useAgentResearch = () => {
                 isGenerating: false,
                 agentPlan: {
                   steps: msg.agentPlan?.steps || [],
-                  status: 'error'
+                  status: 'error' as const
                 }
               }
             : msg
@@ -490,6 +496,7 @@ export const useAgentResearch = () => {
         role: 'assistant',
         content: '你好！我是您的 AI 深度研究助手，专门使用 Gemini 2.0 Flash 模型为您提供专业的研究服务。我可以帮助您：\n\n🔍 深度研究任何主题\n📊 生成专业分析报告\n🌐 搜索最新资料信息\n📝 整合多源数据分析\n💡 提供专业见解总结\n\n请告诉我您想要研究的主题，我将调用专业的 Agent 工具链为您进行全面的调研分析。',
         timestamp: new Date(),
+        blocks: [] // 添加必需的 blocks 属性
       }
     ]);
     setCurrentResearchSession(null);

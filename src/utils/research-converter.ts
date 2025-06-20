@@ -1,8 +1,11 @@
 import { ResearchTask } from "@/components/ui/research-plan";
-import type { LangGraphStep } from "@/types/research";
+import type { ResearchLangGraphStep } from "@/types/research";
+
+// 为了简化，为 ResearchLangGraphStep 创建一个别名
+type LangGraphStep = ResearchLangGraphStep;
 
 // 将 LangGraph 步骤转换为 ResearchPlan 数据
-export const convertLangGraphToResearchTasks = (steps: LangGraphStep[]): ResearchTask[] => {
+export const convertLangGraphToResearchTasks = (steps: ResearchLangGraphStep[]): ResearchTask[] => {
   // 调试信息
   const currentExecutingStep = getCurrentExecutingStep(steps);
   console.log('🔄 转换 LangGraph 数据:', {

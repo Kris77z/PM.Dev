@@ -250,9 +250,9 @@ async function handleCompetitorAnalysis(data: Record<string, unknown>, modelId: 
     
     // 尝试解析为JSON格式以支持结构化数据
     let parsedResult;
+    // 清理返回的文本，移除可能的代码块标记和多余文字
+    let cleanedResult = result.trim();
     try {
-      // 清理返回的文本，移除可能的代码块标记和多余文字
-      let cleanedResult = result.trim();
       
       console.log('原始AI返回内容前200字符:', cleanedResult.substring(0, 200));
       
@@ -675,8 +675,7 @@ async function callGeminiAPI(config: ModelConfig, messages: ChatMessage[], enabl
         body: JSON.stringify(requestBody),
         dispatcher: proxyAgent,
         headersTimeout: 60000,  // 增加到60秒
-        bodyTimeout: 60000,     // 增加到60秒
-        connectTimeout: 30000   // 连接超时30秒
+        bodyTimeout: 60000      // 增加到60秒
       });
 
       if (response.statusCode !== 200) {

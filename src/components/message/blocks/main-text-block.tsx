@@ -10,7 +10,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeHighlight from 'rehype-highlight';
 import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { Copy, Check, Eye, EyeOff } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { MainTextMessageBlock } from '@/types/message';
 import { TextShimmer } from '@/components/ui/text-shimmer';
 import 'katex/dist/katex.min.css';
@@ -69,14 +69,15 @@ const TypewriterText: React.FC<{
 
 export const MainTextBlock: React.FC<MainTextBlockProps> = ({
   block,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   messageId: _messageId,
   role,
   isGenerating = false,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onEdit: _onEdit,
   className = ''
 }) => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [showThinking, setShowThinking] = useState(false);
   const [showTypewriter, setShowTypewriter] = useState(false);
   const [typewriterComplete, setTypewriterComplete] = useState(false);
   const [hasShownTypewriter, setHasShownTypewriter] = useState(false);
@@ -104,7 +105,11 @@ export const MainTextBlock: React.FC<MainTextBlockProps> = ({
   // 检查是否是新消息（创建时间在5秒内）
   const isNewMessage = useMemo(() => {
     const now = new Date().getTime();
-    const createdAt = block.createdAt instanceof Date ? block.createdAt.getTime() : new Date(block.createdAt).getTime();
+    const createdAt = block.createdAt instanceof Date 
+      ? block.createdAt.getTime() 
+      : block.createdAt 
+      ? new Date(block.createdAt).getTime()
+      : now; // 如果没有创建时间，假设是现在创建的
     return (now - createdAt) < 5000; // 5秒内认为是新消息
   }, [block.createdAt]);
 
@@ -132,12 +137,7 @@ export const MainTextBlock: React.FC<MainTextBlockProps> = ({
   };
 
   // 自定义代码组件
-  const CodeComponent = ({ inline, className, children, ...props }: {
-    inline?: boolean;
-    className?: string;
-    children: React.ReactNode;
-    [key: string]: unknown;
-  }) => {
+  const CodeComponent = ({ inline, className, children, ...props }: React.ComponentProps<'code'> & { inline?: boolean }) => {
     const match = /language-(\w+)/.exec(className || '');
     const language = match ? match[1] : '';
     const code = String(children).replace(/\n$/, '');
@@ -204,33 +204,8 @@ export const MainTextBlock: React.FC<MainTextBlockProps> = ({
     );
   };
 
-  // 思考块渲染
-  if (block.type === 'thinking') {
-    return (
-      <div className={`thinking-block ${className}`}>
-        <div className="flex items-center gap-2 mb-2">
-          <button
-            onClick={() => setShowThinking(!showThinking)}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-          >
-            {showThinking ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            <span>{showThinking ? '隐藏思考过程' : '显示思考过程'}</span>
-          </button>
-        </div>
-        
-        {showThinking && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="text-sm text-blue-700 dark:text-blue-300 font-medium mb-2">
-              💭 AI 思考过程
-            </div>
-            <div className="text-sm text-blue-600 dark:text-blue-400 whitespace-pre-wrap">
-              {block.content}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
+  // 注意：MainTextBlock 只处理 MAIN_TEXT 类型的消息块
+  // 思考块应该由专门的 ThinkingBlock 组件处理
 
   // 生成中状态
   if (isGenerating && !block.content) {

@@ -267,7 +267,7 @@ const PageSelectorDemoPage: React.FC = () => {
                   <div className="text-center text-sm text-gray-500 mt-4">您选择了整个页面进行微调。</div>
              )}
              {answers.specificSection && answers.specificSection !== '_entire_page_' && (
-                   <div className="text-center text-sm text-gray-500 mt-4">您选择了区域: '{regionOptions.find(opt => opt.value === answers.specificSection)?.label}'。</div>
+                   <div className="text-center text-sm text-gray-500 mt-4">您选择了区域: &apos;{regionOptions.find(opt => opt.value === answers.specificSection)?.label}&apos;。</div>
              )}
 
         </div>

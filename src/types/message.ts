@@ -137,7 +137,7 @@ export interface Message {
   
   // Agent Plan 支持
   agentPlan?: {
-    steps: LangGraphStep[];
+    steps: import('./research').ResearchLangGraphStep[];
     currentStep?: string;
     status: 'running' | 'completed' | 'error';
     finalReport?: string;

@@ -11,7 +11,7 @@ import {
   type ChatSession,
   type ChatMessage
 } from "@/lib/chat-history";
-import type { Message } from "@/types/research";
+import type { Message } from "@/types/message";
 
 export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -20,6 +20,7 @@ export const useChat = () => {
       role: 'assistant',
       content: '你好！我是您的文档和文稿助手。我可以帮助您：\n\n📝 撰写和优化各类文档\n📊 制作报告和演示文稿\n✍️ 改进文案和内容\n🔍 分析和总结文档\n💡 提供写作建议和灵感\n\n请告诉我您需要什么帮助？',
       timestamp: new Date(),
+      blocks: []
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +58,7 @@ export const useChat = () => {
           role: 'assistant',
           content: '你好！我是您的文档和文稿助手。我可以帮助您：\n\n📝 撰写和优化各类文档\n📊 制作报告和演示文稿\n✍️ 改进文案和内容\n🔍 分析和总结文档\n💡 提供写作建议和灵感\n\n请告诉我您需要什么帮助？',
           timestamp: new Date(),
+          blocks: []
         },
         ...session.messages
       ]);
@@ -103,6 +105,7 @@ export const useChat = () => {
         role: 'assistant',
         content: '你好！我是您的文档和文稿助手。我可以帮助您：\n\n📝 撰写和优化各类文档\n📊 制作报告和演示文稿\n✍️ 改进文案和内容\n🔍 分析和总结文档\n💡 提供写作建议和灵感\n\n请告诉我您需要什么帮助？',
         timestamp: new Date(),
+        blocks: []
       }
     ]);
     setCurrentSession(null);
@@ -125,6 +128,7 @@ export const useChat = () => {
         role: 'assistant',
         content: '你好！我是您的文档和文稿助手。我可以帮助您：\n\n📝 撰写和优化各类文档\n📊 制作报告和演示文稿\n✍️ 改进文案和内容\n🔍 分析和总结文档\n💡 提供写作建议和灵感\n\n请告诉我您需要什么帮助？',
         timestamp: new Date(),
+        blocks: []
       },
       ...session.messages
     ]);
@@ -166,6 +170,7 @@ export const useChat = () => {
       role: 'user',
       content: userInput,
       timestamp: new Date(),
+      blocks: []
     };
 
     const assistantMessageId = Date.now().toString() + '-assistant';
@@ -175,6 +180,7 @@ export const useChat = () => {
       content: '',
       timestamp: new Date(),
       isGenerating: true,
+      blocks: []
     };
 
     let currentMessages: Message[] = [];
@@ -182,10 +188,12 @@ export const useChat = () => {
 
     setMessages(prevMessages => {
       currentMessages = [...prevMessages, userMessage, initialAssistantMessage];
-      messagesForApi = [...prevMessages, userMessage].map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      messagesForApi = [...prevMessages, userMessage]
+        .filter(msg => msg.content) // 过滤掉没有内容的消息
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content || '', // 提供默认值以确保类型安全
+        }));
       return currentMessages;
     });
     setIsLoading(true);

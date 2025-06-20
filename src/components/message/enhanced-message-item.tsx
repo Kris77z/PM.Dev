@@ -27,6 +27,7 @@ export const EnhancedMessageItem: React.FC<EnhancedMessageItemProps> = ({
   showActions = true,
   density = 'normal',
   onBlockEdit,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onMessageEdit: _onMessageEdit,
   className = ''
 }) => {

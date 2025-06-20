@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AnimatedAIInput } from "@/components/ui/animated-ai-input";
 import { TextShimmer } from "@/components/ui/text-shimmer";
@@ -26,7 +26,7 @@ import { convertLangGraphToResearchTasks, getCurrentExecutingStep } from "@/util
 import { ResearchReportModal } from "@/components/ui/research-report-modal";
 
 // 消息转换为块格式的辅助函数
-const convertMessageToBlocks = (message: { content: string; timestamp: Date }): Record<string, MainTextMessageBlock> => {
+const convertMessageToBlocks = (message: { content?: string; timestamp: Date }): Record<string, MainTextMessageBlock> => {
   if (!message.content) return {};
   
   const blockId = `${message.timestamp.getTime()}-main-text`;
@@ -40,7 +40,8 @@ const convertMessageToBlocks = (message: { content: string; timestamp: Date }): 
   return { [blockId]: block };
 };
 
-export default function AskAnythingPage() {
+// 内容组件 - 包含所有使用useSearchParams的逻辑
+function AskAnythingPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const sessionId = searchParams?.get('session');
@@ -648,5 +649,26 @@ export default function AskAnythingPage() {
         }
       />
     </div>
+  );
+}
+
+// 加载组件
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">正在加载...</p>
+      </div>
+    </div>
+  );
+}
+
+// 主页面组件 - 包装在Suspense中
+export default function AskAnythingPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AskAnythingPageContent />
+    </Suspense>
   );
 } 
