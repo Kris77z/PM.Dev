@@ -20,8 +20,14 @@ def invoke_gemini_api(prompt: str, temperature: float = 0.0, is_json: bool = Fal
     api_key = os.getenv("GOOGLE_API_KEY")
     proxy_url = os.getenv("HTTPS_PROXY")
     
-    # Use httpx.HTTPTransport to explicitly set the proxy. This is a more robust method.
-    transport = httpx.HTTPTransport(proxy=proxy_url) if proxy_url else None
+    # 只在开发环境或明确配置时使用代理
+    # 在生产环境中，如果代理URL是localhost，则不使用代理
+    transport = None
+    if proxy_url and not proxy_url.startswith(('http://127.0.0.1', 'http://localhost')):
+        transport = httpx.HTTPTransport(proxy=proxy_url)
+    elif proxy_url:
+        print(f"跳过本地代理配置: {proxy_url} (生产环境不使用)")
+    
     
     if not api_key:
         raise ValueError("GOOGLE_API_KEY is not set.")

@@ -137,7 +137,7 @@ function createFetchOptions(config: ModelConfig, requestBody: Record<string, unk
     signal: AbortSignal.timeout(45000), // 增加到45秒超时，给Claude代理更多时间
   };
 
-  // 如果是Google API且在开发环境，使用代理（但这里不会用到，因为Google用undici）
+  // 只在开发环境使用代理，生产环境跳过
   if (config.provider === 'google' && process.env.NODE_ENV === 'development') {
     try {
       console.log('正在为Gemini配置代理: 127.0.0.1:7890');
@@ -214,8 +214,10 @@ export async function POST(request: NextRequest) {
         
         const requestBody = buildRequestBody(config, messages, context, enableWebSearch);
 
-        // 使用undici代理进行请求
-        const proxyAgent = new ProxyAgent('http://127.0.0.1:7890');
+        // 只在开发环境使用代理
+        const proxyAgent = process.env.NODE_ENV === 'development' 
+          ? new ProxyAgent('http://127.0.0.1:7890')
+          : undefined;
         
         const response = await undiciRequest(geminiUrl, {
           method: 'POST',
@@ -223,7 +225,7 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(requestBody),
-          dispatcher: proxyAgent,
+          ...(proxyAgent && { dispatcher: proxyAgent }),
           headersTimeout: 30000,
           bodyTimeout: 30000
         });

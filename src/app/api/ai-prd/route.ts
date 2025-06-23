@@ -664,8 +664,10 @@ async function callGeminiAPI(config: ModelConfig, messages: ChatMessage[], enabl
     try {
       console.log(`Gemini请求尝试 ${attempt}/${maxRetries}`);
       
-      // 使用代理
-      const proxyAgent = new ProxyAgent('http://127.0.0.1:7890');
+      // 只在开发环境使用代理
+      const proxyAgent = process.env.NODE_ENV === 'development' 
+        ? new ProxyAgent('http://127.0.0.1:7890')
+        : undefined;
       
       const response = await undiciRequest(geminiUrl, {
         method: 'POST',
@@ -673,7 +675,7 @@ async function callGeminiAPI(config: ModelConfig, messages: ChatMessage[], enabl
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-        dispatcher: proxyAgent,
+        ...(proxyAgent && { dispatcher: proxyAgent }),
         headersTimeout: 60000,  // 增加到60秒
         bodyTimeout: 60000      // 增加到60秒
       });
