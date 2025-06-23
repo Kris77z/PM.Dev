@@ -4,6 +4,7 @@ FastAPI主应用
 """
 
 import os
+import sys
 import json
 import asyncio
 from contextlib import asynccontextmanager
@@ -18,9 +19,24 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
 
+# 添加当前目录到Python路径以确保能找到agent模块
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+print(f"🔧 当前工作目录: {os.getcwd()}")
+print(f"🔧 脚本所在目录: {current_dir}")
+print(f"🔧 Python路径前3个: {sys.path[:3]}")
+
 # V1架构导入
-from agent.graph import build_graph
-from agent.state import ResearchState
+try:
+    from agent.graph import build_graph
+    from agent.state import ResearchState
+    print("✅ 成功导入agent模块")
+except ImportError as e:
+    print(f"❌ 导入agent模块失败: {e}")
+    print(f"尝试查找agent目录: {os.path.exists(os.path.join(current_dir, 'agent'))}")
+    raise
 
 # V2架构导入
 from unified_api import create_unified_research_endpoint, UnifiedResearchRequest
