@@ -18,7 +18,7 @@ export const prdTemplate: PrdChapter[] = [
       },
       { 
         id: 'c1_pm', 
-        text: '需求负责人', 
+        text: '产品经理', 
         placeholder: '@张三', 
         type: 'input',
         gridColumn: 'col-span-1',
@@ -30,7 +30,7 @@ export const prdTemplate: PrdChapter[] = [
         placeholder: '@李四', 
         type: 'input',
         gridColumn: 'col-span-1',
-        isRequired: true
+        isRequired: false
       },
       { 
         id: 'c1_backend', 
@@ -38,7 +38,7 @@ export const prdTemplate: PrdChapter[] = [
         placeholder: '@王五', 
         type: 'input',
         gridColumn: 'col-span-1',
-        isRequired: true
+        isRequired: false
       },
       { 
         id: 'c1_data', 
@@ -46,7 +46,7 @@ export const prdTemplate: PrdChapter[] = [
         placeholder: '@赵六', 
         type: 'input',
         gridColumn: 'col-span-1',
-        isRequired: true
+        isRequired: false
       },
       { 
         id: 'c1_requirement_intro', 
@@ -121,6 +121,12 @@ export const prdTemplate: PrdChapter[] = [
         placeholder: '需求方案将通过动态添加功能管理，支持拆解为多个小需求',
         gridColumn: 'col-span-2',
         type: 'dynamic-requirement-solution'
+      },
+      { 
+        id: 'c4_open_issues', 
+        text: '开放问题/待定决策', 
+        placeholder: '列出整个需求方案中尚未确定的问题、需要进一步讨论的决策点...',
+        gridColumn: 'col-span-2'
       }
     ]
   },

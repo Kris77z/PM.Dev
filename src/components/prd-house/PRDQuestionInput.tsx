@@ -64,7 +64,7 @@ export function PRDQuestionInput({
     return (
       <div>
         <Label className="block text-md font-medium text-gray-700 mb-2">
-          {question.text} {question.isRequired && <span className="text-red-500">*</span>}
+          {question.text} {question.isRequired && <span className="text-orange-500">*</span>}
         </Label>
         <div className="flex flex-wrap gap-6">
           {question.options?.map((option) => (
@@ -73,7 +73,7 @@ export function PRDQuestionInput({
                 id={`${question.id}-${option}`}
                 checked={answers[question.id] === option}
                 onCheckedChange={() => onAnswerChange(question.id, option)}
-                className="border-gray-400"
+                className="border-gray-400 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
               />
               <span className="text-base">{option}</span>
             </label>
@@ -88,7 +88,7 @@ export function PRDQuestionInput({
     return (
       <div>
         <Label className="block text-md font-medium text-gray-700 mb-2">
-          {question.text} {question.isRequired && <span className="text-red-500">*</span>}
+          {question.text} {question.isRequired && <span className="text-orange-500">*</span>}
         </Label>
         <div className="flex flex-wrap gap-6">
           {['High', 'Middle', 'Low'].map((priority) => (
@@ -96,7 +96,7 @@ export function PRDQuestionInput({
               <Checkbox 
                 checked={answers[question.id] === priority}
                 onCheckedChange={() => onAnswerChange(question.id, priority)}
-                className="border-gray-400"
+                className="border-gray-400 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
               />
               <span className="text-base">{priority}</span>
             </label>
@@ -363,7 +363,7 @@ export function PRDQuestionInput({
       <div>
         <div className="flex items-center justify-between mb-2">
           <Label className="text-md font-medium text-gray-700">
-            {question.text} {question.isRequired && <span className="text-red-500">*</span>}
+            {question.text} {question.isRequired && <span className="text-orange-500">*</span>}
           </Label>
           <div className="flex gap-1">
             <button
@@ -534,7 +534,7 @@ export function PRDQuestionInput({
                         <Checkbox 
                           checked={req.priority === priority}
                           onCheckedChange={() => onRequirementSolutionAction('update', index, 'priority', priority)}
-                          className="border-gray-400"
+                          className="border-gray-400 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
                         />
                         <span className="text-sm">{priority}</span>
                       </label>
@@ -616,16 +616,7 @@ export function PRDQuestionInput({
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs font-medium text-gray-600 mb-1 block">开放问题/待定决策</Label>
-                <Textarea
-                  value={req.openIssues}
-                  onChange={(e) => onRequirementSolutionAction('update', index, 'openIssues', e.target.value)}
-                  placeholder="尚未确定的问题、需要进一步讨论的决策点..."
-                  rows={2}
-                  className={textareaClassName}
-                />
-              </div>
+
             </div>
           ))}
         </div>
@@ -640,7 +631,7 @@ export function PRDQuestionInput({
         <div className="flex items-center justify-between mb-2">
           <Label className="text-md font-medium text-gray-700">
             {question.text} 
-            {question.isRequired && <span className="text-red-500">*</span>}
+            {question.isRequired && <span className="text-orange-500">*</span>}
             {question.isOptional && <span className="text-gray-400">(可选)</span>}
           </Label>
           {question.hasAI && (
@@ -675,7 +666,7 @@ export function PRDQuestionInput({
       <div className="flex items-center justify-between mb-2">
         <Label className="text-md font-medium text-gray-700">
           {question.text} 
-          {question.isRequired && <span className="text-red-500">*</span>}
+          {question.isRequired && <span className="text-orange-500">*</span>}
           {question.isOptional && <span className="text-gray-400">(可选)</span>}
         </Label>
         {question.hasAI && (

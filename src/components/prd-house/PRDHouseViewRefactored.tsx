@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, FileText, CheckCircle, Download, Copy } from 'lucide-react';
+import { Sparkles, FileText, CheckCircle } from 'lucide-react';
 import { 
   Expandable, 
   ExpandableCard, 
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { TextShimmer } from '@/components/ui/text-shimmer';
 import { AlertSuccess, AlertError } from '@/components/ui/alert';
 import { PRDQuestionInput } from './PRDQuestionInput';
+import { PRDDocumentDisplay } from './PRDDocumentDisplay';
 import { usePRDAI } from '@/hooks/usePRDAI';
 import { usePRDState } from '@/hooks/usePRDState';
 import { prdTemplate as chapters } from '@/data/prd-template';
@@ -24,8 +25,7 @@ export default function PRDHouseViewRefactored() {
   const {
     handleAIAction: handleAIActionHook,
     isAILoading,
-    reviewResult,
-    generatedPRD
+    reviewResult
   } = usePRDAI();
 
   const {
@@ -49,6 +49,8 @@ export default function PRDHouseViewRefactored() {
     setCompetitors,
     requirementSolution,
     handleRequirementSolutionAction,
+    generatedPRD,
+    setGeneratedPRD,
     resetAllState
   } = usePRDState();
 
@@ -163,27 +165,22 @@ export default function PRDHouseViewRefactored() {
   const handleGeneratePRD = async () => {
     try {
       setWorkflowStage('prd-generation');
-      const success = await handleAIActionHook('generate-prd', undefined, {
+      
+      // 使用本地PRD生成器，无需AI调用
+      const { generatePRDDocument } = await import('@/lib/prd-generator');
+      const prdContent = generatePRDDocument({
         answers,
-        userScenarios,
-        competitors,
         changeRecords,
+        userScenarios,
         iterationHistory,
-        requirementSolution,
-        handleAnswerChange,
-        handleUserScenarioAction,
-        handleCompetitorAction,
-        handleChangeRecordAction,
-        handleIterationHistoryAction,
-        handleRequirementSolutionAction,
-        setUserScenarios,
-        setCompetitors
+        competitors,
+        requirementSolution
       });
       
-      if (success) {
-        setWorkflowStage('completed');
-        showAlert('success', 'PRD文档生成成功！');
-      }
+      // 直接设置生成的PRD内容
+      setGeneratedPRD(prdContent);
+      setWorkflowStage('completed');
+      showAlert('success', 'PRD文档生成成功！');
     } catch (error) {
       setWorkflowStage('ai-review');
       console.error('PRD生成失败:', error);
@@ -201,12 +198,7 @@ export default function PRDHouseViewRefactored() {
     setViewMode('single');
   };
 
-  const copyGeneratedPRD = () => {
-    if (generatedPRD) {
-      navigator.clipboard.writeText(generatedPRD);
-      showAlert('success', 'PRD已复制到剪贴板');
-    }
-  };
+
 
   const downloadGeneratedPRD = () => {
     if (generatedPRD) {
@@ -490,7 +482,7 @@ export default function PRDHouseViewRefactored() {
                       {/* 总体评价 */}
                       <div>
                         <h4 className="text-base font-medium text-gray-800 mb-2">总体评价</h4>
-                        <p className="text-gray-700 leading-relaxed">
+                        <p className="text-gray-700 text-sm leading-relaxed">
                           {reviewResult.summary}
                         </p>
                       </div>
@@ -498,13 +490,23 @@ export default function PRDHouseViewRefactored() {
                       {/* 问题清单 */}
                       {reviewResult.issues && reviewResult.issues.length > 0 && (
                         <div>
-                          <h4 className="text-base font-medium text-gray-800 mb-3">问题清单</h4>
+                          <h4 className="text-base font-medium text-gray-800 mb-3 text-left">问题清单</h4>
                           <div className="space-y-3">
                             {reviewResult.issues.map((issue, index) => (
-                              <div key={index}>
-                                <div className="font-medium text-gray-800">{issue.message}</div>
-                                <div className="text-sm text-gray-600 mt-1">{issue.suggestion}</div>
-                                <div className="text-xs text-gray-500 mt-1">字段: {issue.field}</div>
+                              <div key={index} className="border-l-3 border-gray-200 pl-4 py-2">
+                                <div className="flex items-start gap-2">
+                                  <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-medium flex-shrink-0 mt-0.5 ${
+                                    issue.level === 'error' ? 'bg-red-100 text-red-600' :
+                                    issue.level === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                                    'bg-blue-100 text-blue-600'
+                              }`}>
+                                    {issue.level === 'error' ? '!' : issue.level === 'warning' ? '!' : 'i'}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 mb-1">{issue.message}</p>
+                                    <p className="text-sm text-gray-600 leading-relaxed">{issue.suggestion}</p>
+                                  </div>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -634,24 +636,17 @@ export default function PRDHouseViewRefactored() {
                 <ExpandableCardContent className="max-h-[60vh] overflow-y-auto custom-scrollbar">
                   <div className="pt-4 pb-2">
                     <div className="pr-2">
-                      {generatedPRD ? (
-                        <div className="space-y-6">
-                          {/* PRD文档内容 */}
-                          <div className="bg-gray-50 rounded-lg p-6 font-mono text-sm whitespace-pre-wrap">
-                            {generatedPRD}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="py-16 px-8 text-center">
-                          <p className="text-gray-500">PRD文档内容将在这里显示</p>
-                        </div>
-                      )}
+                      <PRDDocumentDisplay 
+                        content={generatedPRD}
+                        onCopy={() => showAlert('success', 'PRD已复制到剪贴板')}
+                        onDownload={downloadGeneratedPRD}
+                      />
                     </div>
                   </div>
                 </ExpandableCardContent>
                 
                 <ExpandableCardFooter>
-                  <div className="flex items-center justify-between w-full pt-4">
+                  <div className="flex items-center justify-center w-full pt-4">
                     <Button 
                       variant="outline" 
                       className="border-gray-300" 
@@ -659,27 +654,6 @@ export default function PRDHouseViewRefactored() {
                     >
                       重新开始
                     </Button>
-                    
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={copyGeneratedPRD}
-                        variant="outline"
-                        className="border-orange-500 text-orange-500 hover:bg-orange-50 px-6 py-2"
-                        disabled={!generatedPRD}
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        复制
-                      </Button>
-                      
-                      <Button
-                        onClick={downloadGeneratedPRD}
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2"
-                        disabled={!generatedPRD}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        下载
-                      </Button>
-                    </div>
                   </div>
                 </ExpandableCardFooter>
               </ExpandableContent>

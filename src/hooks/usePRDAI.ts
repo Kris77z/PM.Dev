@@ -146,7 +146,8 @@ export function usePRDAI() {
             context.competitors,
             context.requirementSolution
           );
-          setGeneratedPRD(prd);
+          // 注意：setGeneratedPRD 应该由调用方提供，这里不直接调用
+          setGeneratedPRD(prd); // 设置生成的PRD内容
           return true;
         }
 
@@ -223,20 +224,30 @@ export function usePRDAI() {
         competitorData = result.competitors;
       } else if (result.analysis) {
         try {
+          let content = result.analysis.trim();
+          
           // 移除可能的代码块标记
-          let cleanedAnalysis = result.analysis.trim();
-          cleanedAnalysis = cleanedAnalysis.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-          cleanedAnalysis = cleanedAnalysis.replace(/^```\s*/, '').replace(/\s*```$/, '');
+          content = content.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+          content = content.replace(/^```\s*/, '').replace(/\s*```$/, '');
+          
+          // 查找JSON内容：寻找第一个 { 到最后一个 } 的内容
+          const firstBrace = content.indexOf('{');
+          const lastBrace = content.lastIndexOf('}');
+          
+          if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
+            content = content.substring(firstBrace, lastBrace + 1);
+          }
           
           // 尝试解析JSON格式的分析结果
-          const parsed = JSON.parse(cleanedAnalysis);
+          const parsed = JSON.parse(content);
           if (Array.isArray(parsed)) {
             competitorData = parsed;
           } else if (parsed.competitors && Array.isArray(parsed.competitors)) {
             competitorData = parsed.competitors;
           }
-        } catch {
+        } catch (parseError: unknown) {
           // 如果JSON解析失败，抛出错误
+          console.error('JSON解析错误:', parseError);
           throw new Error('AI返回了竞品分析内容，但格式需要调整。请重新尝试分析。');
         }
       }
@@ -283,7 +294,7 @@ export function usePRDAI() {
     throw new Error('内容审查失败');
   };
 
-  // AI功能 - PRD生成
+  // AI功能 - PRD生成（改为本地生成）
   const generatePRD = async (
     answers: { [key: string]: string },
     changeRecords: ChangeRecord[],
@@ -292,7 +303,9 @@ export function usePRDAI() {
     competitors: CompetitorItem[],
     requirementSolution: RequirementSolution
   ): Promise<string> => {
-    const result = await callAI('generate-prd', {
+    // 使用本地PRD生成器，无需AI调用
+    const { generatePRDDocument } = await import('@/lib/prd-generator');
+    return generatePRDDocument({
       answers,
       changeRecords,
       userScenarios,
@@ -300,11 +313,6 @@ export function usePRDAI() {
       competitors,
       requirementSolution
     });
-    
-    if (result.success && result.prd) {
-      return result.prd;
-    }
-    throw new Error('PRD生成失败');
   };
 
   // AI功能 - 功能建议

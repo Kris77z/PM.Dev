@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getModelConfig, ModelConfig } from '@/config/models';
 import { ProxyAgent, request as undiciRequest } from 'undici';
+import {
+  getUserScenariosPrompt,
+  getRequirementGoalPrompt,
+  getCompetitorAnalysisPrompt,
+  getFeatureSuggestionPrompt,
+  getBusinessLogicPrompt,
+  getEdgeCasesPrompt,
+  getReviewPrompt,
+  getPRDGenerationPrompt,
+  type UserScenariosData,
+  type RequirementGoalData,
+  type CompetitorAnalysisData,
+  type FeatureSuggestionData,
+  type BusinessLogicData,
+  type EdgeCasesData,
+  type ReviewData,
+  type PRDGenerationData
+} from '@/prompts';
 
 // PRD AI功能类型
 type AIFunction = 
@@ -74,33 +92,13 @@ async function handleUserScenariosExpansion(data: Record<string, unknown>, model
     );
   }
 
-  const prompt = `作为一名专业的产品经理，请基于以下需求信息，深入分析并扩展用户使用场景。
-
-**业务线**：${businessLine || '未指定'}
-**需求介绍**：
-${requirementIntro}
-
-请从以下维度分析用户场景：
-1. **用户类型细分**：不同经验水平、使用频率、业务角色的用户群体
-2. **具体使用场景**：什么时候、什么地方、什么情况下会使用这个功能
-3. **深层痛点分析**：用户在当前情况下遇到的具体问题和困难
-
-要求：
-- 生成3-5个典型且具有代表性的用户场景
-- 每个场景要具体、实用，避免泛泛而谈
-- 痛点分析要深入、有针对性，体现真实的用户痛苦
-- 覆盖不同类型的用户群体和使用情境
-
-请严格按照以下JSON格式输出，不要添加任何额外的文字：
-[
-  {
-    "userType": "具体的用户类型（如：加密货币新手用户）",
-    "scenario": "详细的使用场景描述（包含时间、地点、动机等具体信息）",
-    "painPoint": "用户的具体痛点和困难（要具体到操作层面的问题）"
-  }
-]`;
+  const promptData: UserScenariosData = {
+    businessLine: businessLine as string,
+    requirementIntro: requirementIntro as string
+  };
 
   try {
+    const prompt = getUserScenariosPrompt(promptData);
     const result = await callAI(modelId, prompt, false); // 不需要联网搜索
     const scenarios = parseJSONResponse(result);
     
@@ -135,32 +133,14 @@ async function handleRequirementGoalGeneration(data: Record<string, unknown>, mo
     );
   }
 
-  const prompt = `作为一名专业的产品经理，请基于以下信息，生成一个清晰、具体、可衡量的需求目标。
-
-**业务线**：${businessLine || '未指定'}
-**需求介绍**：
-${requirementIntro}
-
-**用户场景分析**：
-${JSON.stringify(userScenarios, null, 2)}
-
-请基于以上信息，生成一个需求目标，要求：
-
-## 目标制定原则
-1. **用户导向**：明确针对哪类用户群体
-2. **痛点聚焦**：明确要解决的核心痛点
-3. **方案清晰**：说明通过什么方式解决
-4. **效果可衡量**：描述预期达到的具体效果
-
-## 目标格式要求
-- 语言简洁明了，一段话说清楚
-- 逻辑清晰：目标用户 → 核心痛点 → 解决方案 → 预期效果
-- 具体可执行，避免空泛的描述
-- 与用户场景高度关联
-
-请直接输出需求目标内容，不要添加任何解释性文字。`;
+  const promptData: RequirementGoalData = {
+    businessLine: businessLine as string,
+    requirementIntro: requirementIntro as string,
+    userScenarios: userScenarios as unknown[]
+  };
 
   try {
+    const prompt = getRequirementGoalPrompt(promptData);
     const result = await callAI(modelId, prompt, false); // 不需要联网搜索
     
     return NextResponse.json({
@@ -187,65 +167,14 @@ async function handleCompetitorAnalysis(data: Record<string, unknown>, modelId: 
     );
   }
 
-  const searchPrompt = `作为一名专业的产品经理和市场分析师，请对以下产品需求进行深度竞品分析。
-
-**业务线**：${businessLine || '未指定'}
-**需求介绍**：${requirementIntro}
-**需求目标**：${requirementGoal || '未指定'}
-
-请使用联网搜索功能，获取最新的市场信息，并提供一份专业的竞品分析报告。报告应包含：
-
-## 1. 主要竞品列表
-- 找出3-5个主要竞争对手
-- 包含产品名称、公司背景、市场地位
-- 重点关注与我们需求相关的产品或功能
-
-## 2. 功能对比分析
-- 各竞品的核心功能特点
-- 用户界面和交互设计特色
-- 技术实现方案和架构特点
-- 功能的完整性和易用性对比
-
-## 3. 优劣势深度分析
-**各竞品优势：**
-- 功能亮点和创新点
-- 用户体验优势
-- 技术或商业模式优势
-
-**各竞品不足：**
-- 功能缺陷或限制
-- 用户痛点和投诉
-- 技术债务或架构问题
-
-## 4. 市场机会与建议
-- 识别市场空白点和未满足的需求
-- 分析我们的差异化竞争优势
-- 提出具体的产品策略建议
-- 给出功能优先级和实现路径建议
-
-请基于最新的2024-2025年市场信息进行分析，确保信息的时效性和准确性。
-
-**关键输出要求：**
-1. 只输出JSON数据，不要任何介绍、总结或解释性文字
-2. 不要使用代码块标记，直接输出JSON
-3. 所有内容必须使用中文
-4. 确保JSON格式完全正确，可以被程序直接解析
-
-输出格式(请严格遵循，不要添加任何其他内容)：
-{
-  "competitors": [
-    {
-      "name": "竞品名称",
-      "features": "核心功能特点和技术方案，至少50字的详细描述",
-      "advantages": "主要优势和亮点，具体说明用户价值",
-      "disadvantages": "不足和问题，用户痛点和限制",
-      "marketPosition": "市场地位、用户规模、商业模式"
-    }
-  ],
-  "summary": "整体分析总结和我们的差异化机会建议"
-}`;
+  const promptData: CompetitorAnalysisData = {
+    businessLine: businessLine as string,
+    requirementIntro: requirementIntro as string,
+    requirementGoal: requirementGoal as string
+  };
 
   try {
+    const searchPrompt = getCompetitorAnalysisPrompt(promptData);
     const result = await callAI(modelId, searchPrompt, true); // 启用联网搜索
     
     // 尝试解析为JSON格式以支持结构化数据
@@ -315,7 +244,7 @@ async function handleCompetitorAnalysis(data: Record<string, unknown>, modelId: 
 
 // 3. 内容审查（需要联网获取最新最佳实践）
 async function handleContentReview(data: Record<string, unknown>, modelId: string) {
-  const { answers, changeRecords, userScenarios, iterationHistory } = data;
+  const { answers, changeRecords, userScenarios, iterationHistory, requirementSolution } = data;
   
   if (!answers || Object.keys(answers).length === 0) {
     return NextResponse.json(
@@ -324,55 +253,16 @@ async function handleContentReview(data: Record<string, unknown>, modelId: strin
     );
   }
 
-  const prompt = `作为一名资深产品专家和PRD审查师，请对以下PRD内容进行专业审查和评分。
-
-=== PRD表单数据 ===
-${JSON.stringify(answers, null, 2)}
-
-=== 变更记录 ===
-${JSON.stringify(changeRecords, null, 2)}
-
-=== 用户场景分析 ===
-${JSON.stringify(userScenarios, null, 2)}
-
-=== 功能迭代历史 ===
-${JSON.stringify(iterationHistory, null, 2)}
-
-请按照以下维度进行评分审查（总分100分）：
-
-## 评分标准
-1. **需求完整性（25分）**：需求介绍、目标、背景是否完整清晰
-2. **用户价值（20分）**：用户场景、痛点分析是否深入准确
-3. **方案设计（20分）**：功能设计、业务逻辑是否合理完善
-4. **技术可行性（15分）**：技术实现、数据需求是否可行
-5. **项目管理（10分）**：优先级、时间规划、人员配置是否合理
-6. **风险控制（10分）**：边缘场景、异常处理是否充分
-
-请严格按照以下JSON格式输出，不要添加任何额外的解释文字，只输出JSON：
-
-\`\`\`json
-{
-  "score": 75,
-  "isReadyForGeneration": true,
-  "issues": [
-    {
-      "level": "warning",
-      "field": "需求目标",
-      "message": "需求目标描述可以更具体",
-      "suggestion": "建议增加具体的成功指标和时间节点"
-    }
-  ],
-  "summary": "PRD整体质量良好，主要功能清晰，但部分细节需要完善",
-  "recommendations": [
-    "增加具体的验收标准",
-    "完善异常场景处理方案"
-  ]
-}
-\`\`\`
-
-重要：请只返回上述格式的JSON内容，不要添加任何其他文字。`;
+  const promptData: ReviewData = {
+    answers: answers as { [key: string]: string },
+    changeRecords: changeRecords as unknown[],
+    userScenarios: userScenarios as unknown[],
+    iterationHistory: iterationHistory as unknown[],
+    requirementSolution: requirementSolution
+  };
 
   try {
+    const prompt = getReviewPrompt(promptData);
     const result = await callAI(modelId, prompt, true); // 使用联网获取最新最佳实践
     const review = parseJSONResponse(result);
     
@@ -391,7 +281,7 @@ ${JSON.stringify(iterationHistory, null, 2)}
 
 // 4. PRD生成（不需要联网）
 async function handlePRDGeneration(data: Record<string, unknown>, modelId: string) {
-  const { answers, changeRecords, userScenarios, iterationHistory } = data;
+  const { answers, changeRecords, userScenarios, iterationHistory, requirementSolution } = data;
   
   if (!answers || Object.keys(answers).length === 0) {
     return NextResponse.json(
@@ -400,38 +290,16 @@ async function handlePRDGeneration(data: Record<string, unknown>, modelId: strin
     );
   }
 
-  const prompt = `作为一名资深产品经理，请基于以下结构化数据，生成一份完整、专业、规范的产品需求文档（PRD）。
-
-=== PRD表单数据 ===
-${JSON.stringify(answers, null, 2)}
-
-=== 变更记录 ===
-${JSON.stringify(changeRecords, null, 2)}
-
-=== 用户场景分析 ===
-${JSON.stringify(userScenarios, null, 2)}
-
-=== 功能迭代历史 ===
-${JSON.stringify(iterationHistory, null, 2)}
-
-请生成一份结构化、易读的PRD文档，包含以下章节：
-
-1. 需求概述
-2. 用户分析与场景
-3. 功能需求详述
-4. 技术需求与约束
-5. 项目计划与里程碑
-6. 风险评估与应对
-
-要求：
-- 语言专业、逻辑清晰
-- 结构完整、层次分明
-- 内容具体、可执行
-- 格式规范、易于阅读
-
-请以纯文本格式输出，不要使用markdown语法。`;
+  const promptData: PRDGenerationData = {
+    answers: answers as { [key: string]: string },
+    changeRecords: changeRecords as unknown[],
+    userScenarios: userScenarios as unknown[],
+    iterationHistory: iterationHistory as unknown[],
+    requirementSolution: requirementSolution
+  };
 
   try {
+    const prompt = getPRDGenerationPrompt(promptData);
     const result = await callAI(modelId, prompt, false); // 不需要联网搜索
     
     return NextResponse.json({
@@ -458,40 +326,14 @@ async function handleFeatureSuggestion(data: Record<string, unknown>, modelId: s
     );
   }
 
-  const prompt = `作为一名专业的产品经理，请基于以下信息，为产品功能提供专业建议。
-
-**需求描述**：
-${requirement}
-
-**用户场景分析**：
-${userScenarios ? JSON.stringify(userScenarios, null, 2) : '未提供'}
-
-**竞品分析**：
-${competitorAnalysis || '未提供'}
-
-请从以下维度分析并提供功能建议：
-
-## 分析要求
-1. **功能解构**：将需求拆解为具体的功能模块
-2. **用户价值**：每个功能对用户的具体价值
-3. **实现复杂度**：评估技术实现难度
-4. **优先级排序**：根据价值和复杂度进行排序
-
-## 输出格式
-请严格按照以下JSON格式输出，不要添加任何额外的文字：
-
-[
-  {
-    "featureName": "功能名称",
-    "description": "功能详细描述",
-    "workflow": "用户使用流程",
-    "value": "用户价值说明",
-    "complexity": "实现复杂度(低/中/高)",
-    "priority": "优先级(高/中/低)"
-  }
-]`;
+  const promptData: FeatureSuggestionData = {
+    requirement: requirement as string,
+    userScenarios: userScenarios as unknown[],
+    competitorAnalysis: competitorAnalysis as string
+  };
 
   try {
+    const prompt = getFeatureSuggestionPrompt(promptData);
     const result = await callAI(modelId, prompt, false);
     const suggestions = parseJSONResponse(result);
     
@@ -519,24 +361,13 @@ async function handleBusinessLogicSuggestion(data: Record<string, unknown>, mode
     );
   }
 
-  const prompt = `作为一名专业的产品经理，请为以下功能设计详细的业务逻辑。
-
-**功能名称**：${featureName}
-**需求背景**：${requirement || '未提供'}
-
-请提供完整的业务逻辑设计，包括：
-
-## 业务逻辑要求
-1. **核心流程**：主要业务流程步骤
-2. **判断条件**：关键决策点和判断逻辑
-3. **数据流转**：数据在系统中的流动过程
-4. **状态管理**：不同状态的定义和转换规则
-5. **权限控制**：用户权限和操作限制
-6. **异常处理**：异常情况的处理机制
-
-请以清晰、结构化的文本形式输出，不需要JSON格式。`;
+  const promptData: BusinessLogicData = {
+    featureName: featureName as string,
+    requirement: requirement as string
+  };
 
   try {
+    const prompt = getBusinessLogicPrompt(promptData);
     const result = await callAI(modelId, prompt, false);
     
     return NextResponse.json({
@@ -563,34 +394,13 @@ async function handleEdgeCasesSuggestion(data: Record<string, unknown>, modelId:
     );
   }
 
-  const prompt = `作为一名专业的产品经理和测试专家，请为以下功能分析可能的边缘场景和异常情况。
-
-**功能名称**：${featureName}
-**业务逻辑**：${businessLogic || '未提供'}
-
-请从以下维度分析边缘场景：
-
-## 分析维度
-1. **输入异常**：非法、超限、空值等输入场景
-2. **状态异常**：系统状态不正常时的处理
-3. **网络异常**：网络中断、超时等情况
-4. **并发场景**：多用户同时操作的冲突处理
-5. **数据异常**：数据不一致、丢失等情况
-6. **权限边界**：权限不足、越权操作等
-7. **性能极限**：大数据量、高并发等极限情况
-
-请严格按照以下JSON格式输出，不要添加任何额外的文字：
-
-[
-  {
-    "category": "场景分类",
-    "scenario": "具体场景描述",
-    "issue": "可能产生的问题",
-    "solution": "解决方案建议"
-  }
-]`;
+  const promptData: EdgeCasesData = {
+    featureName: featureName as string,
+    businessLogic: businessLogic as string
+  };
 
   try {
+    const prompt = getEdgeCasesPrompt(promptData);
     const result = await callAI(modelId, prompt, false);
     const suggestions = parseJSONResponse(result);
     

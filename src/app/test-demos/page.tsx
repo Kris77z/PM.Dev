@@ -17,6 +17,14 @@ interface DemoCard {
 
 const demos: DemoCard[] = [
   {
+    id: 'prd-test',
+    title: 'PRD工具测试',
+    description: '快速测试PRD生成流程和提示词效果，包含预填充的测试数据模板',
+    path: '/test-demos/prd-test',
+    tags: ['PRD', '产品需求', '提示词测试', 'AI生成'],
+    status: 'new'
+  },
+  {
     id: 'enhanced-message-test',
     title: '增强消息系统测试',
     description: '基于Cherry Studio架构的新消息系统，支持代码高亮、数学公式、引用系统等功能',
