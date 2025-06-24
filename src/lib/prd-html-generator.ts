@@ -6,25 +6,38 @@ export interface AIService {
   generateResponse(prompt: string): Promise<string>;
 }
 
-// Gemini AI服务实现 (简化版本，您可以根据项目中现有的AI服务调用方式进行调整)
+// Gemini AI服务实现
 export class GeminiAIService implements AIService {
+  constructor(private modelId: string = 'gemini-2.0-flash') {}
+
   async generateResponse(prompt: string): Promise<string> {
     try {
-      // 这里应该调用您项目中现有的Gemini API
-      // 暂时返回模拟响应，实际实现时需要替换为真实的API调用
-      console.log('Calling Gemini AI with prompt:', prompt.slice(0, 100) + '...');
+      console.log('Calling Gemini AI for HTML generation with model:', this.modelId);
       
-      // TODO: 实际的Gemini API调用逻辑
-      // const response = await fetch('/api/ai/generate', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ prompt, model: 'gemini-2.0-flash' })
-      // });
-      // const data = await response.json();
-      // return data.content;
+      const response = await fetch('/api/ai-html-generator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt, 
+          modelId: this.modelId 
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP错误: ${response.status}`);
+      }
+
+      const data = await response.json();
       
-      throw new Error('Gemini AI 服务尚未实现，请在 prd-html-generator.ts 中配置实际的API调用');
+      if (!data.success) {
+        throw new Error(data.error || 'API调用失败');
+      }
+
+      console.log('Gemini HTML生成成功，响应长度:', data.content?.length || 0);
+      return data.content;
     } catch (error) {
+      console.error('Gemini AI服务调用失败:', error);
       throw new Error(`AI服务调用失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
