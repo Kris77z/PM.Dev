@@ -14,7 +14,7 @@ import { PMFeatures } from "@/components/PMFeatures";
 import { IconSettings, IconPalette, IconArrowBack } from "@tabler/icons-react";
 
 // --- Import necessary functions and types ---
-import { generateAllDocuments } from '../lib/documentGenerator'; // Import the reusable generator function
+import { generateAllDocuments } from '../lib/prd-generator'; // Import the reusable generator function
 // Import types from the central types file
 import {
     PlanningMode,

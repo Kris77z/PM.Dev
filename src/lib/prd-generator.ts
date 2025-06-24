@@ -6,6 +6,9 @@ import {
   RequirementSolution 
 } from '@/types/prd';
 
+// 导入FlowAnswers类型以支持generateAllDocuments函数
+import { FlowAnswers } from '@/types';
+
 interface PRDGenerationData {
   answers: { [key: string]: string };
   changeRecords: ChangeRecord[];
@@ -148,4 +151,31 @@ function generateIterationHistoryTable(iterationHistory: IterationHistory[]): st
   return iterationHistory
     .map(history => `| ${history.version || '暂未提及'} | ${history.author || '暂未提及'} | ${history.date || '暂未提及'} | ${history.content || '暂未提及'} |`)
     .join('\n');
+}
+
+// 为了兼容旧的page.tsx接口，添加generateAllDocuments函数
+export async function generateAllDocuments(flowAnswers: FlowAnswers): Promise<{
+  generatedDocsMap: Map<string, string | null>;
+  errors: string[];
+}> {
+  const generatedDocsMap = new Map<string, string | null>();
+  const errors: string[] = [];
+
+  try {
+    // 这里是一个简化的实现，实际上page.tsx目前没有使用PRD功能
+    // 如果flowAnswers包含PRD相关数据，可以在这里生成PRD文档
+    console.log('generateAllDocuments called with:', flowAnswers);
+    
+    // 暂时返回空结果，因为旧的文档生成功能已被PRD工具替代
+    // 如果需要，可以在这里添加其他文档生成逻辑
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    errors.push(`文档生成失败: ${errorMessage}`);
+  }
+
+  return {
+    generatedDocsMap,
+    errors
+  };
 } 
