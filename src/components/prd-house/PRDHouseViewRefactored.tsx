@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, FileText, CheckCircle } from 'lucide-react';
+import { Sparkles, FileText, CheckCircle, Monitor } from 'lucide-react';
 import { 
   Expandable, 
   ExpandableCard, 
@@ -16,6 +16,7 @@ import { TextShimmer } from '@/components/ui/text-shimmer';
 import { AlertSuccess, AlertError } from '@/components/ui/alert';
 import { PRDQuestionInput } from './PRDQuestionInput';
 import { PRDDocumentDisplay } from './PRDDocumentDisplay';
+import { HTMLPrototypePreview } from './HTMLPrototypePreview';
 import { usePRDAI } from '@/hooks/usePRDAI';
 import { usePRDState } from '@/hooks/usePRDState';
 import { prdTemplate as chapters } from '@/data/prd-template';
@@ -59,6 +60,7 @@ export default function PRDHouseViewRefactored() {
   const [showChapters, setShowChapters] = useState(false);
   const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [hasReviewed, setHasReviewed] = useState(false);
+  const [showHTMLPreview, setShowHTMLPreview] = useState(false);
 
   // 计算当前章节和完成状态
   const currentChapter = chapters[currentChapterIndex];
@@ -646,13 +648,20 @@ export default function PRDHouseViewRefactored() {
                 </ExpandableCardContent>
                 
                 <ExpandableCardFooter>
-                  <div className="flex items-center justify-center w-full pt-4">
+                  <div className="flex items-center justify-center w-full pt-4 gap-3">
                     <Button 
                       variant="outline" 
                       className="border-gray-300" 
                       onClick={handleRestart}
                     >
                       重新开始
+                    </Button>
+                    <Button 
+                      onClick={() => setShowHTMLPreview(true)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+                    >
+                      <Monitor className="h-4 w-4 mr-2" />
+                      生成HTML原型
                     </Button>
                   </div>
                 </ExpandableCardFooter>
@@ -706,7 +715,26 @@ export default function PRDHouseViewRefactored() {
         
         {workflowStage === 'prd-generation' && renderPRDGenerationView()}
         
-        {workflowStage === 'completed' && renderCompletedView()}
+        {workflowStage === 'completed' && !showHTMLPreview && renderCompletedView()}
+        
+        {/* HTML原型预览模态 */}
+        {showHTMLPreview && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg w-full h-full max-w-7xl max-h-[90vh] overflow-hidden">
+              <HTMLPrototypePreview
+                prdData={{
+                  answers,
+                  changeRecords,
+                  userScenarios,
+                  iterationHistory,
+                  competitors,
+                  requirementSolution
+                }}
+                onClose={() => setShowHTMLPreview(false)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* 自定义样式 */}
         <style>{`

@@ -9,7 +9,7 @@ import {
 // 导入FlowAnswers类型以支持generateAllDocuments函数
 import { FlowAnswers } from '@/types';
 
-interface PRDGenerationData {
+export interface PRDGenerationData {
   answers: { [key: string]: string };
   changeRecords: ChangeRecord[];
   userScenarios: UserScenario[];
