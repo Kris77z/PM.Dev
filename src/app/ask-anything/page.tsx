@@ -16,7 +16,8 @@ import {
   FileText,
   Home,
   Trash2,
-  Brain
+  Brain,
+  Monitor
 } from "lucide-react";
 import ResearchPlan from "@/components/ui/research-plan";
 import type { ViewType } from "@/types/research";
@@ -159,6 +160,94 @@ function AskAnythingPageContent() {
     }
   }, [queryParam, viewParam, agentResearch.agentMessages.length, agentResearch.handleAgentResearchMessage, searchParams, router]);
 
+  // 原型生成相关函数
+  const handlePrototypeMessage = (message: string, modelId?: string, enableWS?: boolean) => {
+    console.log('原型生成消息:', message, modelId, enableWS);
+    // 这里将来会实现原型生成逻辑
+  };
+
+  // PRD文档消息组件
+  const PrototypePRDMessage = () => {
+    const [prdData, setPrdData] = useState<Record<string, unknown> | null>(null);
+
+    useEffect(() => {
+      // 从sessionStorage读取PRD数据
+      try {
+        const savedPrdData = sessionStorage.getItem('prdData');
+        if (savedPrdData) {
+          setPrdData(JSON.parse(savedPrdData));
+        }
+      } catch (error) {
+        console.error('读取PRD数据失败:', error);
+      }
+    }, []);
+
+    if (!prdData) {
+      return (
+        <div className="bg-gray-100 rounded-lg p-4">
+          <p className="text-gray-600">未找到PRD数据，请先在PRD工具中生成文档</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
+        <h3 className="font-semibold text-blue-900 mb-2">PRD文档内容</h3>
+        <div className="text-sm text-blue-800 space-y-2">
+          <p><strong>产品名称:</strong> {prdData.answers?.['product-name'] || '未填写'}</p>
+          <p><strong>产品描述:</strong> {prdData.answers?.['product-description'] || '未填写'}</p>
+          <p><strong>目标用户:</strong> {prdData.answers?.['target-users'] || '未填写'}</p>
+          {/* 可以根据需要显示更多PRD内容 */}
+        </div>
+      </div>
+    );
+  };
+
+  // 原型预览面板组件
+  const PrototypePreviewPanel = () => {
+    const [isGenerating] = useState(false);
+    const [prototype] = useState<string | null>(null);
+
+    if (prototype) {
+      // 已生成原型 - 显示预览
+      return (
+        <div className="h-full p-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-semibold mb-4">原型预览</h2>
+            {/* 这里将来会添加多设备尺寸预览 */}
+            <div className="bg-gray-100 rounded-lg p-8 h-96 flex items-center justify-center">
+              <p className="text-gray-600">原型内容将在这里显示</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (isGenerating) {
+      // 正在生成 - 显示loading效果
+      return (
+        <div className="h-full flex items-center justify-center p-6">
+          <div className="text-center">
+            <div className="mb-4">
+              <TextShimmer duration={2}>正在生成原型...</TextShimmer>
+            </div>
+            <p className="text-gray-600 text-sm">请稍候，正在根据您的PRD文档生成原型</p>
+          </div>
+        </div>
+      );
+    }
+
+    // 默认状态 - 显示标题
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-7xl font-normal text-black mb-12">PM.DEV To Prototype</h1>
+          <p className="text-gray-600">在左侧开始对话，生成您的产品原型</p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-white flex">
       
@@ -218,6 +307,17 @@ function AskAnythingPageContent() {
                   onClick: (e: React.MouseEvent) => {
                     e.preventDefault();
                     switchView('prompt-stash');
+                  }
+                }}
+              />
+              <SidebarLink 
+                link={{
+                  label: "原型生成",
+                  href: "#",
+                  icon: <Monitor className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+                  onClick: (e: React.MouseEvent) => {
+                    e.preventDefault();
+                    switchView('prototype-house');
                   }
                 }}
               />
@@ -397,12 +497,42 @@ function AskAnythingPageContent() {
             </div>
           )}
 
-          {/* 原型工具视图 */}
+          {/* 原型生成视图 */}
           {activeView === 'prototype-house' && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-4xl font-normal text-black mb-4">原型工具</h1>
-                <p className="text-gray-600">快速原型设计工具正在开发中...</p>
+            <div className="flex-1 flex overflow-hidden -mx-6 -my-12">
+              {/* 左侧对话区域 - 30% */}
+              <div className="w-[30%] flex flex-col border-r border-gray-200">
+                {/* 对话消息区域 */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="max-w-2xl mx-auto space-y-6">
+                    {/* PRD文档消息 - 从sessionStorage读取 */}
+                    <PrototypePRDMessage />
+                    
+                    {/* 其他对话消息 */}
+                    {/* 这里将来会添加与原型生成相关的对话消息 */}
+                  </div>
+                </div>
+                
+                {/* 底部输入框 */}
+                <div className="border-t border-gray-200 p-4">
+                  <AnimatedAIInput
+                    onSendMessage={(message) => handlePrototypeMessage(message)}
+                    placeholder="描述您想要的原型功能..."
+                    disabled={false}
+                    selectedModel="gpt-4"
+                    onModelChange={() => {}}
+                    webSearchEnabled={false}
+                    onWebSearchToggle={() => {}}
+                    hideModelSelector={true}
+                    hideSearchIcon={true}
+                  />
+                </div>
+              </div>
+
+              {/* 右侧预览区域 - 70% */}
+              <div className="flex-1 flex flex-col">
+                {/* 预览内容 */}
+                <PrototypePreviewPanel />
               </div>
             </div>
           )}

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^1.2.19",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-checkbox": "^1.3.1",
     "@radix-ui/react-dialog": "^1.1.6",
@@ -42,6 +43,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
+    "react-resizable-panels": "^3.0.3",
     "react-syntax-highlighter": "^15.6.1",
     "react-use-measure": "^2.1.7",
     "rehype-highlight": "^7.0.2",

@@ -20,6 +20,7 @@ import { HTMLPrototypePreview } from './HTMLPrototypePreview';
 import { usePRDAI } from '@/hooks/usePRDAI';
 import { usePRDState } from '@/hooks/usePRDState';
 import { prdTemplate as chapters } from '@/data/prd-template';
+import { useRouter } from 'next/navigation';
 
 export default function PRDHouseViewRefactored() {
   // 使用自定义hooks
@@ -54,6 +55,9 @@ export default function PRDHouseViewRefactored() {
     setGeneratedPRD,
     resetAllState
   } = usePRDState();
+
+  // 添加 useRouter
+  const router = useRouter();
 
   // 本地状态
   const [showStartScreen, setShowStartScreen] = useState(true);
@@ -227,6 +231,30 @@ export default function PRDHouseViewRefactored() {
     setHasReviewed(false);
     // 清空所有填写的数据
     resetAllState();
+  };
+
+  // 新增：处理原型生成的函数
+  const handlePrototypeGeneration = () => {
+    try {
+      // 构建PRD数据对象
+      const prdData = {
+        answers,
+        changeRecords,
+        userScenarios,
+        iterationHistory,
+        competitors,
+        requirementSolution
+      };
+      
+      // 保存到sessionStorage
+      sessionStorage.setItem('prdData', JSON.stringify(prdData));
+      
+      // 跳转到原型生成页面
+      router.push('/prototype');
+    } catch (error) {
+      console.error('保存PRD数据失败:', error);
+      showAlert('error', '数据保存失败，请重试');
+    }
   };
 
   // 渲染章节卡片
@@ -657,11 +685,11 @@ export default function PRDHouseViewRefactored() {
                       重新开始
                     </Button>
                     <Button 
-                      onClick={() => setShowHTMLPreview(true)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+                      onClick={handlePrototypeGeneration}
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2"
                     >
                       <Monitor className="h-4 w-4 mr-2" />
-                      生成HTML原型
+                      生成原型
                     </Button>
                   </div>
                 </ExpandableCardFooter>
