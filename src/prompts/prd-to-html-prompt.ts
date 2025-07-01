@@ -1,4 +1,11 @@
 import { PRDGenerationData } from '@/lib/prd-generator';
+import { ENHANCED_INTERACTION_PROMPT } from './prd-to-html-enhanced-interaction';
+import { STRUCTURED_PROMPT_FRAMEWORK } from './structured-prompt-framework';
+import { QUALITY_ASSURANCE_SYSTEM } from './quality-assurance-system';
+import { QUALITY_EXECUTION_INSTRUCTIONS } from './quality-execution-instructions';
+import { STANDARD_DATA_MANAGEMENT_TOOLS } from './standard-data-management-tools';
+import { RESPONSIVE_DESIGN_TOOLS } from './responsive-design-tools';
+import { PRD_ENHANCEMENT_SYSTEM } from './prd-enhancement-system';
 
 export interface PRDToHTMLPromptData {
   prdData: PRDGenerationData;
@@ -6,104 +13,204 @@ export interface PRDToHTMLPromptData {
 }
 
 export const PRD_TO_HTML_SYSTEM_PROMPT = `
-# 角色定义
-你是一位资深的前端工程师和UX设计师，你的任务是将接收到的 JSON 格式的产品需求文档（PRD）数据转换成一个结构清晰、带交互效果的单体 HTML 页面原型。
+${STRUCTURED_PROMPT_FRAMEWORK}
 
-# 输出要求
+<DESIGN_SYSTEM_REQUIREMENTS>
+## 🎨 使用现代化的 Tailwind CSS 设计系统
 
-## 格式要求
-- 必须生成一个完整的 HTML 文件，包含 HTML 结构、CSS 样式和 JavaScript 交互代码
-- 使用 Tailwind CSS CDN 来进行样式设计，避免复杂的编译环境
-- 确保页面在现代浏览器中能够正常显示和交互
+### ⚡ 为什么选择 Tailwind CSS
+**优势明显**：成熟稳定、AI友好、生态完善、语法简洁
+**最佳实践**：使用最新稳定版本，结合现代组件设计模式
 
-## 技术栈要求
-- HTML5 语义化标签
-- Tailwind CSS v3.x (通过CDN引入)
-- 原生 JavaScript (ES6+)
-- 响应式设计，适配桌面和移动设备
-
-## 页面结构映射规则
-
-### 1. 基础信息映射
-- \`answers['c1_requirement_intro']\` → 页面主标题和产品描述
-- \`answers['c1_business_line']\` → 业务线标识
-- \`answers['c2_requirement_goal']\` → 需求目标卡片
-
-### 2. 团队信息映射
-- 团队成员配置渲染为人员卡片组
-
-### 3. 用户场景分析映射
-- \`userScenarios\` 数组 → 用户场景卡片列表
-- 每个场景包含：用户类型、使用场景、痛点分析
-
-### 4. 竞品分析映射
-- \`competitors\` 数组 → 竞品对比表格或卡片
-- 包含：产品名称、功能特点、优势、不足等
-
-### 5. 需求方案映射
-- \`requirementSolution.requirements\` → 功能模块卡片
-- 每个需求包含：名称、优先级、功能描述、验收标准等
-
-## 交互要求
-1. **折叠展开功能**：为每个主要模块（如"用户场景分析"、"竞品分析"、"需求方案"）添加点击标题展开/折叠内容的交互
-2. **标签页切换**：如果内容较多，可以使用标签页形式组织内容
-3. **悬停效果**：为卡片和按钮添加适当的悬停效果
-4. **响应式导航**：在移动设备上提供合适的导航体验
-
-## 设计原则
-1. **简洁现代**：使用干净的设计风格，突出内容
-2. **层次清晰**：通过字体大小、颜色、间距建立清晰的信息层次
-3. **交互友好**：提供直观的交互反馈
-4. **内容优先**：确保PRD内容能够清晰地传达
-
-## HTML模板结构
-请基于以下基础结构进行扩展：
-
+### CDN资源引入（推荐稳定版本）
+在HTML的<head>部分包含：
 \`\`\`html
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>产品需求文档原型</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#f97316',
-                        secondary: '#ea580c'
-                    }
-                }
-            }
+<!-- Tailwind CSS - 稳定版本 -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- 自定义配置 -->
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: '#4F46E5',
+          'primary-hover': '#4338CA',
         }
-    </script>
-</head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- 页面内容 -->
-</body>
-</html>
+      }
+    }
+  }
+</script>
 \`\`\`
 
-# 响应指令
-请根据提供的PRD数据，生成一个完整的HTML页面。直接返回HTML代码，不需要额外的解释文字。确保代码完整可运行。
+### 现代化组件设计模式
+采用类似Shadcn/ui的设计语言：
+
+**按钮系统**：
+- 主要按钮：\`bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md font-medium transition-colors\`
+- 次要按钮：\`bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-md font-medium\`
+- 危险按钮：\`bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium\`
+
+**卡片系统**：
+- 基础卡片：\`bg-white rounded-lg border border-gray-200 shadow-sm\`
+- 交互卡片：\`bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow\`
+- 突出卡片：\`bg-white rounded-lg border border-gray-200 shadow-lg\`
+
+**表单系统**：
+- 输入框：\`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary\`
+- 标签：\`block text-sm font-medium text-gray-700 mb-1\`
+- 错误状态：\`border-red-300 focus:ring-red-20 focus:border-red-500\`
+
+### 布局系统（现代化响应式）
+**容器系统**：
+- 主容器：\`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8\`
+- 内容容器：\`max-w-4xl mx-auto\`
+- 全宽容器：\`w-full\`
+
+**Grid布局**：
+\`\`\`html
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+  <aside class="lg:col-span-1">侧边栏</aside>
+  <main class="lg:col-span-2">主内容</main>
+  <aside class="lg:col-span-1">右侧栏</aside>
+</div>
+\`\`\`
+
+**Flexbox布局**：
+\`\`\`html
+<div class="flex flex-col lg:flex-row gap-6">
+  <aside class="lg:w-1/4">侧边栏</aside>
+  <main class="lg:w-1/2">主内容</main>
+  <aside class="lg:w-1/4">右侧栏</aside>
+</div>
+\`\`\`
+
+### 响应式断点系统
+- **sm**: 640px+ (平板竖屏)
+- **md**: 768px+ (平板横屏)  
+- **lg**: 1024px+ (桌面)
+- **xl**: 1280px+ (大桌面)
+- **2xl**: 1536px+ (超大屏)
+
+### 颜色系统（语义化）
+- **主色调**: \`bg-primary\`, \`text-primary\`, \`border-primary\`
+- **中性色**: \`bg-gray-50\`, \`bg-gray-100\`, \`bg-gray-900\`, \`text-gray-600\`, \`text-gray-900\`
+- **状态色**: \`bg-green-500\`(成功), \`bg-yellow-500\`(警告), \`bg-red-500\`(错误)
+- **背景**: \`bg-white\`, \`bg-gray-50\`, \`bg-gray-100\`
+
+### 交互状态系统
+- **悬停**: \`hover:bg-gray-50\`, \`hover:text-primary\`, \`hover:shadow-md\`
+- **焦点**: \`focus:outline-none focus:ring-2 focus:ring-primary/20\`
+- **活跃**: \`active:bg-gray-100\`
+- **禁用**: \`disabled:opacity-50 disabled:cursor-not-allowed\`
+- **过渡**: \`transition-colors duration-200\`, \`transition-shadow duration-200\`
+
+### 现代化JavaScript交互
+使用原生JavaScript + CSS实现：
+- 模态框：结合Tailwind样式和简单的show/hide逻辑
+- 下拉菜单：使用绝对定位和条件渲染
+- 选项卡：通过数据属性和class切换
+- 通知：使用固定定位和动画类
+</DESIGN_SYSTEM_REQUIREMENTS>
+
+<PRODUCT_TYPE_STANDARDS>
+## 不同产品类型的必备页面和功能
+
+### SaaS/工具类产品标准
+必备页面：主仪表盘、数据管理、详情编辑、设置配置、用户权限
+核心功能：数据CRUD、搜索筛选、批量操作、导入导出、权限管理
+交互重点：表格操作、表单验证、工作流程、数据可视化
+推荐布局：Dashboard布局（侧边栏+顶部导航+主内容区）
+
+### 社交/内容类产品标准  
+必备页面：信息流、个人资料、内容发布、消息通知、发现探索
+核心功能：内容发布、互动评论、关注关系、消息通知、内容搜索
+交互重点：内容展示、社交互动、富文本编辑、实时通知
+推荐布局：Single Page布局（顶部导航+流式内容）
+
+### 电商类产品标准
+必备页面：商品展示、商品详情、购物车、订单管理、用户中心
+核心功能：商品筛选、购买流程、支付结算、订单跟踪、用户管理
+交互重点：商品展示、购买流程、支付体验、订单管理
+推荐布局：Grid布局（商品网格+侧边筛选）
+
+### 仪表盘类产品标准
+必备页面：数据概览、报表分析、数据源管理、告警监控、系统设置
+核心功能：数据可视化、实时监控、报表生成、告警配置、系统管理
+交互重点：图表交互、数据筛选、实时刷新、告警处理
+推荐布局：Dashboard布局（多列卡片+侧边导航）
+</PRODUCT_TYPE_STANDARDS>
+
+${ENHANCED_INTERACTION_PROMPT}
+
+${QUALITY_ASSURANCE_SYSTEM}
+
+${QUALITY_EXECUTION_INSTRUCTIONS}
+
+${STANDARD_DATA_MANAGEMENT_TOOLS}
+
+${RESPONSIVE_DESIGN_TOOLS}
+
+${PRD_ENHANCEMENT_SYSTEM}
 `;
 
 export function buildPRDToHTMLPrompt(data: PRDToHTMLPromptData): string {
   const { prdData, userQuery } = data;
-  
+
   let prompt = PRD_TO_HTML_SYSTEM_PROMPT;
-  
-  prompt += `\n\n# PRD数据输入\n\n`;
-  prompt += `以下是需要转换的PRD数据（JSON格式）：\n\n`;
-  prompt += `\`\`\`json\n${JSON.stringify(prdData, null, 2)}\n\`\`\`\n\n`;
-  
+
+  prompt += `
+
+<PRD_DATA_INPUT>
+以下是需要转换为产品原型的结构化PRD数据：
+
+${JSON.stringify(prdData, null, 2)}
+</PRD_DATA_INPUT>
+
+`;
+
   if (userQuery) {
-    prompt += `# 用户特殊要求\n\n${userQuery}\n\n`;
+    prompt += `
+<USER_REQUIREMENTS>
+用户的额外要求和偏好：
+${userQuery}
+
+请在构建产品原型时特别考虑这些要求，确保生成的原型符合用户期望。
+</USER_REQUIREMENTS>
+
+`;
   }
-  
-  prompt += `请基于以上数据生成对应的HTML页面原型。`;
-  
+
+  prompt += `
+<EXECUTION_INSTRUCTION>
+现在请基于<THINKING_FRAMEWORK>完成产品分析和规划，然后严格遵循<STRICT_CONSTRAINTS>和<QUALITY_GATES>的要求，构建一个高质量的、可交互的产品应用原型。
+
+## 🚨 最终执行要求（必须严格遵守）
+
+### CSS框架选择（现代化方案）
+1. ✅ **首选**现代化、成熟的Tailwind CSS
+2. ✅ 使用稳定的CDN版本
+3. ✅ 配置自定义primary颜色主题
+4. ✅ 采用现代化组件设计模式
+
+### 布局要求
+1. ✅ 使用 max-w-7xl mx-auto px-4 作为主容器
+2. ✅ 使用 grid grid-cols-* 或 flex 进行布局
+3. ✅ 响应式：sm: md: lg: xl: 断点系统
+4. ✅ 间距：gap-* space-y-* p-* m-* 系统
+
+### 质量验证清单
+生成前必须确认：
+- HTML正确引入Tailwind CSS CDN
+- 组件使用现代化的设计模式
+- 响应式布局移动优先
+- 交互状态完整流畅
+
+记住：用户希望看到的是**产品本身的界面和功能**，而不是关于产品的文档展示！
+
+开始构建真实的产品原型界面吧！
+</EXECUTION_INSTRUCTION>
+`;
+
   return prompt;
-} 
+}

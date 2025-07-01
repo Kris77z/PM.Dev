@@ -214,10 +214,27 @@ export async function POST(request: NextRequest) {
         
         const requestBody = buildRequestBody(config, messages, context, enableWebSearch);
 
-        // 只在开发环境使用代理
-        const proxyAgent = process.env.NODE_ENV === 'development' 
-          ? new ProxyAgent('http://127.0.0.1:7890')
-          : undefined;
+        // 代理配置：优先使用环境变量，然后根据环境判断
+        let proxyAgent = undefined;
+        
+        if (process.env.USE_PROXY === 'true') {
+          // 明确启用代理
+          const proxyUrl = process.env.PROXY_URL || 'http://127.0.0.1:7890';
+          proxyAgent = new ProxyAgent(proxyUrl);
+          console.log(`强制使用代理: ${proxyUrl}`);
+        } else if (process.env.USE_PROXY === 'false') {
+          // 明确禁用代理
+          console.log('强制禁用代理，使用直连');
+        } else if (process.env.NODE_ENV === 'development') {
+          // 开发环境默认尝试使用代理，但允许失败
+          try {
+            proxyAgent = new ProxyAgent('http://127.0.0.1:7890');
+            console.log('开发环境默认使用代理: 127.0.0.1:7890');
+          } catch (error) {
+            console.log('代理初始化失败，将使用直连:', error);
+            proxyAgent = undefined;
+          }
+        }
         
         const response = await undiciRequest(geminiUrl, {
           method: 'POST',

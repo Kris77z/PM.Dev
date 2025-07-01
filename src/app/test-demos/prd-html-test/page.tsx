@@ -1,16 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Monitor, Play, Download, Code, Eye, Smartphone, Tablet, AlertCircle } from 'lucide-react';
+import { Monitor, Play, Download, Eye, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+
 import { AlertSuccess, AlertError } from '@/components/ui/alert';
 import { HTMLPrototypePreview } from '@/components/prd-house/HTMLPrototypePreview';
 import { PRDGenerationData } from '@/lib/prd-generator';
+import { generateHTMLPrompt } from '@/prompts/html-generation-prompt';
 
 export default function PRDHTMLTestPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [alertState, setAlertState] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [generatedHTML, setGeneratedHTML] = useState('');
 
   const showAlert = (type: 'success' | 'error', message: string) => {
     setAlertState({ type, message });
@@ -100,7 +103,7 @@ export default function PRDHTMLTestPage() {
       }
     ],
     requirementSolution: {
-      name: '智能任务管理系统',
+      sharedPrototype: '智能任务管理系统',
       requirements: [
         {
           name: '智能任务创建',
@@ -139,43 +142,81 @@ export default function PRDHTMLTestPage() {
     }
   };
 
+  const handleGenerateHTML = async () => {
+    setIsLoading(true);
+    try {
+      // 使用新的简化提示词系统
+      const prompt = generateHTMLPrompt(mockPRDData);
+      
+      const response = await fetch('/api/ai-html-generator', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          prompt: prompt,
+          modelId: 'gemini-2.0-flash'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate HTML');
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Generation failed');
+      }
+      
+      setGeneratedHTML(result.content);
+      setShowPreview(true);
+      showAlert('success', '✨ 使用新的简化系统成功生成精美HTML原型！');
+    } catch (error) {
+      console.error('Error generating HTML:', error);
+      showAlert('error', '生成HTML时出错，请检查控制台');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleTestPreview = () => {
     setShowPreview(true);
     showAlert('success', '打开HTML原型预览测试界面');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* 顶部标题 */}
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Monitor className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">PRD到HTML原型生成测试</h1>
-          </div>
-          <p className="text-gray-600 text-lg">
-            这个页面用于测试基于产品需求文档（PRD）自动生成HTML原型的功能。
-            我们将使用模拟的完整PRD数据来验证整个生成流程。
-          </p>
-        </div>
-
-        {/* Alert 提示 */}
-        {alertState.type && (
-          <div className="fixed top-4 right-4 z-50 pointer-events-none">
-            <div className="pointer-events-auto animate-in fade-in-0 slide-in-from-top-2 duration-300">
-              {alertState.type === 'success' ? (
-                <AlertSuccess>{alertState.message}</AlertSuccess>
-              ) : (
-                <AlertError>{alertState.message}</AlertError>
-              )}
+    <div className="h-screen bg-gray-50 flex">
+      {/* 左侧控制面板 */}
+      <div className="w-1/2 border-r border-gray-300 overflow-y-auto">
+        <div className="p-6">
+          {/* 顶部标题 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Monitor className="h-8 w-8 text-blue-600" />
+              <h1 className="text-2xl font-bold text-gray-900">PRD到HTML生成测试</h1>
             </div>
+            <p className="text-gray-600">
+              测试基于PRD数据自动生成精美HTML原型的功能。
+              我们已经集成了新的<strong className="text-blue-600">简化智能匹配系统</strong>。
+            </p>
           </div>
-        )}
 
-        {/* 测试数据预览 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Alert 提示 */}
+          {alertState.type && (
+            <div className="fixed top-4 left-4 z-50 pointer-events-none">
+              <div className="pointer-events-auto animate-in fade-in-0 slide-in-from-top-2 duration-300">
+                {alertState.type === 'success' ? (
+                  <AlertSuccess>{alertState.message}</AlertSuccess>
+                ) : (
+                  <AlertError>{alertState.message}</AlertError>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* PRD基本信息 */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               测试PRD数据概览
@@ -183,7 +224,7 @@ export default function PRDHTMLTestPage() {
             <div className="space-y-3 text-sm">
               <div>
                 <span className="font-medium text-gray-700">产品名称：</span>
-                <span className="text-gray-600">{mockPRDData.requirementSolution.name}</span>
+                <span className="text-gray-600">{mockPRDData.requirementSolution.sharedPrototype}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-700">产品介绍：</span>
@@ -201,7 +242,7 @@ export default function PRDHTMLTestPage() {
           </div>
 
           {/* 数据统计 */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">数据统计</h2>
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="bg-blue-50 rounded-lg p-4">
@@ -222,99 +263,141 @@ export default function PRDHTMLTestPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* 核心功能展示 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">核心需求功能</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {mockPRDData.requirementSolution.requirements.map((req, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-gray-800">{req.name}</h3>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    req.priority === 'High' ? 'bg-red-100 text-red-700' :
-                    req.priority === 'Middle' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-green-100 text-green-700'
-                  }`}>
-                    {req.priority}
-                  </span>
+          {/* 核心功能展示 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">核心需求功能</h2>
+            <div className="space-y-3">
+              {mockPRDData.requirementSolution.requirements.map((req, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-gray-800">{req.name}</h3>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      req.priority === 'High' ? 'bg-red-100 text-red-700' :
+                      req.priority === 'Middle' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                      {req.priority}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{req.features}</p>
+                  <p className="text-xs text-gray-500">{req.painPoints}</p>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{req.features}</p>
-                <p className="text-xs text-gray-500">{req.painPoints}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 测试控制面板 */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">测试控制面板</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 测试说明 */}
-            <div>
-              <h3 className="font-medium text-gray-700 mb-3">测试说明</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p>• 点击"开始测试"将使用上述模拟PRD数据生成HTML原型</p>
-                <p>• 支持添加自定义要求来优化生成效果</p>
-                <p>• 预览窗口支持桌面、平板、手机三种视图模式</p>
-                <p>• 可以查看生成的HTML源代码并下载文件</p>
-                <p>• 支持历史记录管理和版本恢复</p>
-              </div>
+              ))}
             </div>
+          </div>
 
-            {/* 操作按钮 */}
-            <div>
-              <h3 className="font-medium text-gray-700 mb-3">操作</h3>
+          {/* 测试控制面板 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">测试控制面板</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-gray-700 mb-3">✨ 新版本功能</h3>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>• <strong className="text-blue-600">简化系统：</strong>移除复杂分类，直接生成精美HTML</p>
+                  <p>• <strong className="text-green-600">专注精美：</strong>基于您的HTML参考文件的设计风格</p>
+                  <p>• <strong className="text-purple-600">现代设计：</strong>使用最新的CSS技术和响应式布局</p>
+                  <p>• <strong className="text-orange-600">智能图片：</strong>自动使用高质量占位图片</p>
+                  <p>• <strong className="text-red-600">即时预览：</strong>生成后立即在右侧预览</p>
+                </div>
+              </div>
+
               <div className="space-y-3">
                 <Button
-                  onClick={handleTestPreview}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2"
+                  onClick={handleGenerateHTML}
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex items-center justify-center gap-2"
                 >
-                  <Play className="h-4 w-4" />
-                  开始测试 HTML 原型生成
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      生成中...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      🚀 新版本：生成精美HTML
+                    </>
+                  )}
+                </Button>
+                
+                <Button
+                  onClick={handleTestPreview}
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  📋 旧版本：使用原有系统
                 </Button>
                 
                 <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
-                  <strong>注意：</strong>测试需要配置有效的Gemini API Key才能正常工作。
-                  如果API未配置，会显示相应的错误信息。
+                  <strong>注意：</strong>新版本使用Gemini 2.0 Flash模型，生成速度更快，质量更高。
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 期望结果说明 */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6 mt-6">
-          <h2 className="text-xl font-semibold text-blue-800 mb-4">期望测试结果</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-            <div>
-              <h3 className="font-medium text-blue-700 mb-2">生成的HTML原型应包含：</h3>
-              <ul className="space-y-1 text-blue-600">
-                <li>• 产品标题和描述展示</li>
-                <li>• 用户场景卡片列表</li>
-                <li>• 竞品分析对比表格</li>
-                <li>• 核心功能模块展示</li>
-                <li>• 响应式设计和交互效果</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-medium text-blue-700 mb-2">技术要求验证：</h3>
-              <ul className="space-y-1 text-blue-600">
-                <li>• 使用Tailwind CSS样式</li>
-                <li>• 包含JavaScript交互代码</li>
-                <li>• 支持折叠展开功能</li>
-                <li>• 移动端友好的响应式布局</li>
-                <li>• 符合现代Web标准</li>
-              </ul>
             </div>
           </div>
         </div>
       </div>
 
-      {/* HTML原型预览模态 */}
-      {showPreview && (
+      {/* 右侧预览区域 */}
+      <div className="w-1/2 bg-white flex flex-col">
+        <div className="border-b border-gray-300 p-4 bg-gray-50">
+          <h2 className="text-lg font-semibold text-gray-800">✨ HTML原型预览</h2>
+          <p className="text-sm text-gray-600">生成的HTML将在这里实时预览</p>
+        </div>
+        
+        <div className="flex-1 p-4">
+          {generatedHTML ? (
+            <div className="h-full flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-md font-medium text-gray-700">生成的HTML预览</h3>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => {
+                      const newWindow = window.open('', '_blank');
+                      if (newWindow) {
+                        newWindow.document.write(generatedHTML);
+                        newWindow.document.close();
+                      }
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    新窗口打开
+                  </Button>
+                  <Button
+                    onClick={() => setGeneratedHTML('')}
+                    size="sm"
+                    variant="outline"
+                  >
+                    清除
+                  </Button>
+                </div>
+              </div>
+              <div className="flex-1 border border-gray-200 rounded-lg overflow-hidden">
+                <iframe
+                  srcDoc={generatedHTML}
+                  className="w-full h-full border-0"
+                  title="Generated HTML Preview"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <Monitor className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg mb-2">等待生成HTML预览</p>
+                <p className="text-sm">点击左侧的生成按钮开始测试</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 旧版本预览模态（保持兼容） */}
+      {showPreview && !generatedHTML && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg w-full h-full max-w-7xl max-h-[90vh] overflow-hidden">
             <HTMLPrototypePreview

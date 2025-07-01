@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AnimatedAIInput } from "@/components/ui/animated-ai-input";
 import { TextShimmer } from "@/components/ui/text-shimmer";
@@ -10,6 +10,8 @@ import { AGENT_PROMPTS } from "@/config/prompts";
 import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
 import PromptStashView from "@/components/prompt-stash/PromptStashView";
 import PRDHouseViewRefactored from "@/components/prd-house/PRDHouseViewRefactored";
+import { PRDGenerationData } from "@/lib/prd-generator";
+import { buildPRDToHTMLPrompt } from "@/prompts/prd-to-html-prompt";
 import { 
   MessageSquarePlus, 
   Lightbulb,
@@ -17,7 +19,10 @@ import {
   Home,
   Trash2,
   Brain,
-  Monitor
+  Monitor,
+  Smartphone,
+  Tablet,
+  Copy
 } from "lucide-react";
 import ResearchPlan from "@/components/ui/research-plan";
 import type { ViewType } from "@/types/research";
@@ -25,6 +30,7 @@ import { useChat } from "@/hooks/useChat";
 import { useAgentResearch } from "@/hooks/useAgentResearch";
 import { convertLangGraphToResearchTasks, getCurrentExecutingStep } from "@/utils/research-converter";
 import { ResearchReportModal } from "@/components/ui/research-report-modal";
+import { cn } from "@/lib/utils";
 
 // 消息转换为块格式的辅助函数
 const convertMessageToBlocks = (message: { content?: string; timestamp: Date }): Record<string, MainTextMessageBlock> => {
@@ -160,15 +166,135 @@ function AskAnythingPageContent() {
     }
   }, [queryParam, viewParam, agentResearch.agentMessages.length, agentResearch.handleAgentResearchMessage, searchParams, router]);
 
-  // 原型生成相关函数
-  const handlePrototypeMessage = (message: string, modelId?: string, enableWS?: boolean) => {
-    console.log('原型生成消息:', message, modelId, enableWS);
-    // 这里将来会实现原型生成逻辑
+  // 原型生成相关状态
+  const [isGeneratingPrototype, setIsGeneratingPrototype] = useState(false);
+  const [autoGenerationStarted, setAutoGenerationStarted] = useState(false);
+  const [prototypeError, setPrototypeError] = useState<string | null>(null);
+  
+  // 缓存iframe URL避免重新生成导致闪烁
+  const [cachedPrototypeUrl, setCachedPrototypeUrl] = useState<string | null>(null);
+  const [cachedCodeUrl, setCachedCodeUrl] = useState<string | null>(null);
+
+  // 右侧Tab状态
+  const [activeRightTab, setActiveRightTab] = useState<'prototype' | 'code'>('prototype');
+  const [activeSizeTab, setActiveSizeTab] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [htmlCode, setHtmlCode] = useState<string>('');
+
+  // 自动开始原型生成
+  useEffect(() => {
+    if (activeView === 'prototype-house' && !autoGenerationStarted) {
+      setAutoGenerationStarted(true);
+      
+      // 延迟一下确保组件完全加载，然后开始生成
+      setTimeout(() => {
+        handlePrototypeMessage();
+      }, 500);
+    } else if (activeView !== 'prototype-house') {
+      // 离开原型生成页面时重置状态
+      setAutoGenerationStarted(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView, autoGenerationStarted]);
+
+  // 调试：监控prototypeError状态变化
+  useEffect(() => {
+    console.log('prototypeError 状态变化:', prototypeError);
+  }, [prototypeError]);
+
+  // 清理URL当组件卸载或htmlCode变化时
+  useEffect(() => {
+    return () => {
+      if (cachedPrototypeUrl) {
+        URL.revokeObjectURL(cachedPrototypeUrl);
+      }
+      if (cachedCodeUrl) {
+        URL.revokeObjectURL(cachedCodeUrl);
+      }
+    };
+  }, [cachedPrototypeUrl, cachedCodeUrl]);
+
+  // 原型生成流程
+  const handlePrototypeMessage = useCallback(async () => {
+    // 读取PRD数据
+    const savedPrdData = sessionStorage.getItem('prdData');
+    if (!savedPrdData) {
+      return;
+    }
+
+    let prdData: PRDGenerationData;
+    try {
+      prdData = JSON.parse(savedPrdData) as PRDGenerationData;
+    } catch (error) {
+      console.error('解析PRD数据失败:', error);
+      return;
+    }
+
+    setIsGeneratingPrototype(true);
+    setPrototypeError(null);
+
+    try {
+      console.log('开始HTML生成请求，模型: gemini-2.5-flash');
+      const response = await fetch('/api/ai-html-generator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: createPrototypePrompt(prdData),
+          modelId: 'gemini-2.5-flash'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.content) {
+          // 提取HTML内容
+          const htmlMatch = data.content.match(/```html\s*([\s\S]*?)\s*```/);
+          const htmlContent = htmlMatch ? htmlMatch[1].trim() : data.content;
+          setHtmlCode(htmlContent);
+          setPrototypeError(null);
+          
+          // 生成并缓存URL
+          const prototypeBlob = new Blob([htmlContent], { type: 'text/html' });
+          const prototypeUrl = URL.createObjectURL(prototypeBlob);
+          setCachedPrototypeUrl(prototypeUrl);
+          
+          const codeHtml = createCodePreviewHtml(htmlContent);
+          const codeBlob = new Blob([codeHtml], { type: 'text/html' });
+          const codeUrl = URL.createObjectURL(codeBlob);
+          setCachedCodeUrl(codeUrl);
+        } else {
+          throw new Error(data.error || '生成失败');
+        }
+      } else {
+        // 尝试解析错误响应
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `API请求失败: ${response.status}`);
+        } catch {
+          throw new Error(`API请求失败: ${response.status} - ${response.statusText}`);
+        }
+      }
+    } catch (error) {
+      console.error('原型生成失败:', error);
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      console.log('设置错误状态:', errorMessage);
+      setPrototypeError(errorMessage);
+    } finally {
+      setIsGeneratingPrototype(false);
+      console.log('生成流程结束');
+    }
+  }, []);
+
+  // 创建原型生成提示词 - 使用现有的专业提示词系统
+  const createPrototypePrompt = (prdData: PRDGenerationData) => {
+    return buildPRDToHTMLPrompt({
+      prdData,
+      userQuery: '请生成一个现代化、可交互的产品原型，使用Tailwind CSS设计系统，确保具有完整的功能和良好的用户体验。'
+    });
   };
 
-  // PRD文档消息组件
+  // PRD文档消息组件 - 气泡样式
   const PrototypePRDMessage = () => {
-    const [prdData, setPrdData] = useState<Record<string, unknown> | null>(null);
+    const [prdData, setPrdData] = useState<PRDGenerationData | null>(null);
 
     useEffect(() => {
       // 从sessionStorage读取PRD数据
@@ -184,68 +310,389 @@ function AskAnythingPageContent() {
 
     if (!prdData) {
       return (
-        <div className="bg-gray-100 rounded-lg p-4">
-          <p className="text-gray-600">未找到PRD数据，请先在PRD工具中生成文档</p>
+        <div className="w-full">
+          <div className="bg-gray-100 text-gray-800 rounded-2xl px-4 py-3">
+            <p className="text-sm leading-relaxed">未找到PRD数据，请先在PRD工具中生成文档</p>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
-        <h3 className="font-semibold text-blue-900 mb-2">PRD文档内容</h3>
-        <div className="text-sm text-blue-800 space-y-2">
-          <p><strong>产品名称:</strong> {prdData.answers?.['product-name'] || '未填写'}</p>
-          <p><strong>产品描述:</strong> {prdData.answers?.['product-description'] || '未填写'}</p>
-          <p><strong>目标用户:</strong> {prdData.answers?.['target-users'] || '未填写'}</p>
-          {/* 可以根据需要显示更多PRD内容 */}
+      <div className="w-full">
+        <div className="bg-gray-100 text-gray-800 rounded-2xl px-4 py-3">
+          <div className="text-sm leading-relaxed space-y-3">
+            <div>
+              <span className="font-medium">产品名称：</span>
+              <span>{prdData.requirementSolution?.sharedPrototype || '未填写'}</span>
+            </div>
+            <div>
+              <span className="font-medium">产品描述：</span>
+              <span>{prdData.answers?.['c1_requirement_intro'] || '未填写'}</span>
+            </div>
+            <div>
+              <span className="font-medium">核心需求：</span>
+              <span>{prdData.answers?.['c2_requirement_goal'] || '未填写'}</span>
+            </div>
+            {prdData.answers?.['c3_target_metrics'] && (
+              <div>
+                <span className="font-medium">目标指标：</span>
+                <span>{prdData.answers['c3_target_metrics']}</span>
+              </div>
+            )}
+            {prdData.answers?.['c4_user_portrait'] && (
+              <div>
+                <span className="font-medium">用户画像：</span>
+                <span>{prdData.answers['c4_user_portrait']}</span>
+              </div>
+            )}
+            {prdData.answers?.['c5_user_story'] && (
+              <div>
+                <span className="font-medium">用户故事：</span>
+                <span>{prdData.answers['c5_user_story']}</span>
+              </div>
+            )}
+            {prdData.answers?.['c6_functional_requirements'] && (
+              <div>
+                <span className="font-medium">功能需求：</span>
+                <span>{prdData.answers['c6_functional_requirements']}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   };
 
-  // 原型预览面板组件
-  const PrototypePreviewPanel = () => {
-    const [isGenerating] = useState(false);
-    const [prototype] = useState<string | null>(null);
-
-    if (prototype) {
-      // 已生成原型 - 显示预览
-      return (
-        <div className="h-full p-6">
-          <div className="text-center">
-            <h2 className="text-2xl font-semibold mb-4">原型预览</h2>
-            {/* 这里将来会添加多设备尺寸预览 */}
-            <div className="bg-gray-100 rounded-lg p-8 h-96 flex items-center justify-center">
-              <p className="text-gray-600">原型内容将在这里显示</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (isGenerating) {
-      // 正在生成 - 显示loading效果
-      return (
-        <div className="h-full flex items-center justify-center p-6">
-          <div className="text-center">
-            <div className="mb-4">
-              <TextShimmer duration={2}>正在生成原型...</TextShimmer>
-            </div>
-            <p className="text-gray-600 text-sm">请稍候，正在根据您的PRD文档生成原型</p>
-          </div>
-        </div>
-      );
-    }
-
-    // 默认状态 - 显示标题
+  // 右侧Tab导航组件
+  const RightTabNavigation = () => {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-7xl font-normal text-black mb-12">PM.DEV To Prototype</h1>
-          <p className="text-gray-600">在左侧开始对话，生成您的产品原型</p>
+      <div className="flex items-center justify-between px-4 py-3 bg-white">
+        {/* 左侧：原型/代码切换和复制按钮 */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
+            <button
+              onClick={() => setActiveRightTab('prototype')}
+              className={cn(
+                "px-3 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                activeRightTab === 'prototype'
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              )}
+            >
+              原型
+            </button>
+            <button
+              onClick={() => setActiveRightTab('code')}
+              className={cn(
+                "px-4 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                activeRightTab === 'code'
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              )}
+            >
+              代码
+            </button>
+          </div>
+
+          {/* 复制代码按钮 - 随时可以复制 */}
+          <button
+            onClick={() => {
+              if (htmlCode) {
+                navigator.clipboard.writeText(htmlCode);
+                // 可以添加复制成功提示
+                const button = document.activeElement as HTMLButtonElement;
+                const originalTitle = button.title;
+                button.title = '复制成功！';
+                setTimeout(() => {
+                  button.title = originalTitle;
+                }, 1000);
+              }
+            }}
+            disabled={!htmlCode}
+            className={cn(
+              "px-3 py-2 rounded-md transition-all duration-200 flex items-center justify-center",
+              htmlCode
+                ? "text-gray-700 bg-gray-100 hover:bg-gray-200"
+                : "text-gray-400 bg-gray-50 cursor-not-allowed"
+            )}
+            title="复制代码"
+          >
+            <Copy className="h-4 w-4" />
+          </button>
         </div>
+
+        {/* 右侧：尺寸切换 - 只在原型预览时显示 */}
+        {activeRightTab === 'prototype' && (
+          <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg">
+            <button
+              onClick={() => setActiveSizeTab('desktop')}
+              className={cn(
+                "px-3 py-2 rounded-md transition-all duration-200 flex items-center justify-center",
+                activeSizeTab === 'desktop'
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              )}
+              title="桌面视图"
+            >
+              <Monitor className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setActiveSizeTab('tablet')}
+              className={cn(
+                "px-3 py-2 rounded-md transition-all duration-200 flex items-center justify-center",
+                activeSizeTab === 'tablet'
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              )}
+              title="平板视图"
+            >
+              <Tablet className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setActiveSizeTab('mobile')}
+              className={cn(
+                "px-3 py-2 rounded-md transition-all duration-200 flex items-center justify-center",
+                activeSizeTab === 'mobile'
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              )}
+              title="手机视图"
+            >
+              <Smartphone className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
     );
+  };
+
+  // 创建代码预览HTML页面
+  const createCodePreviewHtml = (code: string) => {
+    // 正确的HTML转义顺序：先转义&，再转义<和>
+    const escapedCode = code
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    
+    // 将代码按行分割
+    const lines = escapedCode.split('\n');
+    
+    return `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码预览</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: #ffffff;
+            line-height: 1.6;
+            color: #333;
+            overflow: hidden;
+        }
+        .code-container {
+            height: 100vh;
+            display: flex;
+            position: relative;
+        }
+        .line-numbers {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            background: #f8f9fa;
+            border-right: 1px solid #e1e4e8;
+            padding: 20px 8px 20px 0;
+            min-width: 48px;
+            max-width: 48px;
+            text-align: right;
+            user-select: none;
+            font-size: 14px;
+            color: #6a737d;
+            z-index: 10;
+            overflow: hidden;
+        }
+        .code-content {
+            flex: 1;
+            margin-left: 48px;
+            padding: 20px 20px 20px 24px;
+            overflow: auto;
+            box-sizing: border-box;
+        }
+        pre {
+            margin: 0;
+            white-space: pre;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .line-number {
+            display: block;
+            height: 1.6em;
+            line-height: 1.6;
+            color: #6a737d;
+            font-size: 14px;
+            padding-right: 8px;
+            margin: 0;
+        }
+        .line-content {
+            display: block;
+            height: 1.6em;
+            line-height: 1.6;
+            white-space: pre;
+            margin: 0;
+        }
+        /* 代码高亮样式 */
+        .keyword { color: #d73a49; font-weight: 600; }
+        .string { color: #032f62; }
+        .comment { color: #6a737d; font-style: italic; }
+        .tag { color: #22863a; font-weight: 600; }
+        .attr-name { color: #6f42c1; }
+        .attr-value { color: #032f62; }
+        
+        /* 同步滚动 */
+        .code-content::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        .code-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .code-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 6px;
+        }
+        .code-content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+    <script>
+        // 同步行号和代码的垂直滚动
+        window.addEventListener('load', function() {
+            const codeContent = document.querySelector('.code-content');
+            const lineNumbers = document.querySelector('.line-numbers');
+            
+            codeContent.addEventListener('scroll', function() {
+                lineNumbers.scrollTop = codeContent.scrollTop;
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="code-container">
+        <div class="line-numbers">
+            ${lines.map((_, index) => `<div class="line-number">${(index + 1).toString().padStart(3, ' ')}</div>`).join('')}
+        </div>
+        <div class="code-content">
+            <pre><code>${lines.map(line => `<div class="line-content">${line}</div>`).join('')}</code></pre>
+        </div>
+    </div>
+</body>
+</html>`;
+  };
+
+  // 原型预览面板组件 - 统一使用iframe
+  const PrototypePreviewPanel = () => {
+    // 获取iframe内容URL - 使用缓存避免重新生成
+    const getIframeUrl = () => {
+      if (htmlCode) {
+        if (activeRightTab === 'prototype') {
+          return cachedPrototypeUrl;
+        } else {
+          return cachedCodeUrl;
+        }
+      }
+      return null;
+    };
+
+         // 获取iframe容器样式
+     const getIframeContainerStyles = () => {
+       if (activeRightTab === 'prototype') {
+         // 原型预览根据设备尺寸调整
+         switch (activeSizeTab) {
+           case 'mobile':
+             return 'flex justify-center items-start pt-8 bg-gray-50';
+           case 'tablet':
+             return 'flex justify-center items-start pt-8 bg-gray-50';
+           case 'desktop':
+           default:
+             return 'bg-white';
+         }
+       } else {
+         // 代码预览始终全屏
+         return 'bg-white';
+       }
+     };
+
+     // 获取iframe样式 - 去掉重复边框
+     const getIframeStyles = () => {
+       if (activeRightTab === 'prototype') {
+         switch (activeSizeTab) {
+           case 'mobile':
+             return 'w-96 h-[calc(100%-4rem)] border-0';
+           case 'tablet':
+             return 'w-3/4 h-[calc(100%-4rem)] border-0';
+           case 'desktop':
+           default:
+             return 'w-full h-full border-0';
+         }
+       } else {
+         // 代码预览始终全屏
+         return 'w-full h-full border-0';
+       }
+     };
+
+    const iframeUrl = getIframeUrl();
+
+         if (htmlCode && iframeUrl) {
+       // 已生成原型 - 统一使用iframe，添加边框包裹
+       return (
+         <div className="w-full h-full p-4">
+           <div className={`w-full h-full border border-gray-200 rounded-lg overflow-hidden ${getIframeContainerStyles()}`}>
+             <iframe 
+               src={iframeUrl}
+               className={getIframeStyles()}
+               title={activeRightTab === 'prototype' ? "Generated Prototype" : "Code Preview"}
+               style={{ 
+                 minHeight: '100%',
+                 border: 'none'
+               }}
+             />
+           </div>
+         </div>
+       );
+     }
+
+         if (isGeneratingPrototype) {
+       // 正在生成
+       return (
+         <div className="w-full h-full p-4">
+           <div className="w-full h-full border border-gray-100 rounded-lg flex items-center justify-center bg-gray-50">
+             <div className="text-center">
+               <div className="mb-4">
+                 <TextShimmer duration={2}>正在生成原型...</TextShimmer>
+               </div>
+               <p className="text-gray-600 text-sm">请稍候，正在根据您的PRD文档生成原型</p>
+             </div>
+           </div>
+         </div>
+       );
+     }
+
+     // 默认状态
+     return (
+       <div className="w-full h-full p-4">
+         <div className="w-full h-full border border-gray-100 rounded-lg flex items-center justify-center bg-white">
+           <div className="text-center">
+             <h1 className="text-7xl font-normal text-black">PM.DEV To ProtoType</h1>
+           </div>
+         </div>
+       </div>
+     );
   };
 
   return (
@@ -417,7 +864,7 @@ function AskAnythingPageContent() {
                         <button
                           key={index}
                           onClick={action.onClick}
-                          className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                           {action.icon}
                           <span>{action.title}</span>
@@ -499,40 +946,54 @@ function AskAnythingPageContent() {
 
           {/* 原型生成视图 */}
           {activeView === 'prototype-house' && (
-            <div className="flex-1 flex overflow-hidden -mx-6 -my-12">
-              {/* 左侧对话区域 - 30% */}
-              <div className="w-[30%] flex flex-col border-r border-gray-200">
-                {/* 对话消息区域 */}
-                <div className="flex-1 overflow-y-auto p-6">
-                  <div className="max-w-2xl mx-auto space-y-6">
-                    {/* PRD文档消息 - 从sessionStorage读取 */}
+            <div className="flex-1 flex overflow-hidden -mx-6 -my-12 h-screen">
+              {/* 左侧对话区域 - 固定380px宽度 */}
+              <div className="flex flex-col bg-white" style={{ width: '380px', minWidth: '380px', maxWidth: '380px' }}>
+                {/* PRD信息和步骤区域 */}
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="space-y-6">
+                    {/* PRD文档消息 - 丰富样式 */}
                     <PrototypePRDMessage />
                     
-                    {/* 其他对话消息 */}
-                    {/* 这里将来会添加与原型生成相关的对话消息 */}
+                    {/* 错误信息气泡 */}
+                    {prototypeError && (
+                      <div className="w-full">
+                        <div className="bg-red-50 border border-red-200 text-red-800 rounded-2xl px-4 py-3">
+                          <div className="text-sm leading-relaxed">
+                            <div className="font-medium mb-1">生成失败</div>
+                            <div>{prototypeError}</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 重新生成按钮 - 只在失败时显示 */}
+                    {prototypeError && (
+                      <div className="w-full">
+                        <button
+                          onClick={handlePrototypeMessage}
+                          disabled={isGeneratingPrototype}
+                          className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg px-4 py-3 text-sm font-medium transition-colors"
+                        >
+                          {isGeneratingPrototype ? '正在生成...' : '重新生成原型'}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-                
-                {/* 底部输入框 */}
-                <div className="border-t border-gray-200 p-4">
-                  <AnimatedAIInput
-                    onSendMessage={(message) => handlePrototypeMessage(message)}
-                    placeholder="描述您想要的原型功能..."
-                    disabled={false}
-                    selectedModel="gpt-4"
-                    onModelChange={() => {}}
-                    webSearchEnabled={false}
-                    onWebSearchToggle={() => {}}
-                    hideModelSelector={true}
-                    hideSearchIcon={true}
-                  />
                 </div>
               </div>
 
-              {/* 右侧预览区域 - 70% */}
-              <div className="flex-1 flex flex-col">
-                {/* 预览内容 */}
-                <PrototypePreviewPanel />
+              {/* 右侧预览区域 - 占用剩余所有空间 */}
+              <div className="flex-1 flex flex-col min-w-0">
+                {/* Tab 导航 - 固定高度，去掉分割线 */}
+                <div className="flex-shrink-0">
+                  <RightTabNavigation />
+                </div>
+                
+                {/* 预览内容 - 占用剩余高度 */}
+                <div className="flex-1 min-h-0">
+                  <PrototypePreviewPanel />
+                </div>
               </div>
             </div>
           )}
@@ -578,7 +1039,7 @@ function AskAnythingPageContent() {
                       <button
                         onClick={() => agentResearch.handleAgentResearchMessage("大模型发展趋势")}
                         disabled={agentResearch.isLoading}
-                        className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -589,7 +1050,7 @@ function AskAnythingPageContent() {
                       <button
                         onClick={() => agentResearch.handleAgentResearchMessage("AI在区块链中的应用")}
                         disabled={agentResearch.isLoading}
-                        className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                       >
                         <FileText className="w-4 h-4" />
                         <span>AI在区块链中的应用</span>
@@ -598,7 +1059,7 @@ function AskAnythingPageContent() {
                       <button
                         onClick={() => agentResearch.handleAgentResearchMessage("Vibe Coding的未来")}
                         disabled={agentResearch.isLoading}
-                        className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -702,7 +1163,7 @@ function AskAnythingPageContent() {
                                     // 重新加载页面以确保状态完全重置
                                     window.location.href = `/ask-anything?view=agent-research`;
                                   }}
-                                  className="flex items-center gap-2 px-4 py-3 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors mx-auto"
+                                  className="flex items-center gap-2 px-4 py-3 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors mx-auto"
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

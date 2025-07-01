@@ -7,16 +7,21 @@ import {
   createDownloadableHTML,
   createPreviewURL
 } from '@/lib/prd-html-generator';
+import { BuildInstructions } from '@/lib/prd-to-build-instructions';
 
 export interface HTMLPreviewState {
   isGenerating: boolean;
   generatedHTML: string | null;
   previewURL: string | null;
+  buildInstructions: BuildInstructions | null;
+  instructionsSummary: string | null;
   error: string | null;
   generationHistory: Array<{
     id: string;
     timestamp: Date;
     htmlContent: string;
+    buildInstructions?: BuildInstructions;
+    instructionsSummary?: string;
     userQuery?: string;
   }>;
 }
@@ -26,6 +31,8 @@ export function usePRDHTMLGeneration() {
     isGenerating: false,
     generatedHTML: null,
     previewURL: null,
+    buildInstructions: null,
+    instructionsSummary: null,
     error: null,
     generationHistory: []
   });
@@ -33,17 +40,22 @@ export function usePRDHTMLGeneration() {
   // 生成HTML原型
   const generateHTMLPrototype = useCallback(async (
     prdData: PRDGenerationData,
-    userQuery?: string
+    userQuery?: string,
+    modelId?: string
   ): Promise<boolean> => {
     setState(prev => ({
       ...prev,
       isGenerating: true,
-      error: null
+      error: null,
+      buildInstructions: null,
+      instructionsSummary: null
     }));
 
     try {
+      console.log('🚀 开始生成HTML原型，模型:', modelId);
+      
       // 创建AI服务实例
-      const aiService = new GeminiAIService();
+      const aiService = new GeminiAIService(modelId);
       
       // 生成HTML
       const result: HTMLGenerationResult = await generateHTMLFromPRD(
@@ -53,6 +65,8 @@ export function usePRDHTMLGeneration() {
       );
 
       if (result.success && result.htmlContent) {
+        console.log('✅ HTML生成成功');
+        
         // 清理之前的预览URL
         if (state.previewURL) {
           URL.revokeObjectURL(state.previewURL);
@@ -66,6 +80,8 @@ export function usePRDHTMLGeneration() {
           id: Date.now().toString(),
           timestamp: new Date(),
           htmlContent: result.htmlContent,
+          buildInstructions: result.buildInstructions,
+          instructionsSummary: result.instructionsSummary,
           userQuery
         };
 
@@ -74,20 +90,26 @@ export function usePRDHTMLGeneration() {
           isGenerating: false,
           generatedHTML: result.htmlContent as string,
           previewURL: newPreviewURL,
+          buildInstructions: result.buildInstructions || null,
+          instructionsSummary: result.instructionsSummary || null,
           error: null,
           generationHistory: [newHistoryItem, ...prev.generationHistory.slice(0, 4)] // 保留最近5个
         }));
 
         return true;
       } else {
+        console.error('❌ HTML生成失败:', result.error);
         setState(prev => ({
           ...prev,
           isGenerating: false,
+          buildInstructions: result.buildInstructions || null,
+          instructionsSummary: result.instructionsSummary || null,
           error: result.error || '生成失败，未知错误'
         }));
         return false;
       }
     } catch (error) {
+      console.error('❌ 生成过程中发生错误:', error);
       setState(prev => ({
         ...prev,
         isGenerating: false,
@@ -115,6 +137,8 @@ export function usePRDHTMLGeneration() {
       ...prev,
       generatedHTML: null,
       previewURL: null,
+      buildInstructions: null,
+      instructionsSummary: null,
       error: null
     }));
   }, [state.previewURL]);
@@ -123,6 +147,8 @@ export function usePRDHTMLGeneration() {
   const restoreFromHistory = useCallback((historyId: string) => {
     const historyItem = state.generationHistory.find(item => item.id === historyId);
     if (historyItem) {
+      console.log('🔄 从历史记录恢复:', historyId);
+      
       // 清理当前预览URL
       if (state.previewURL) {
         URL.revokeObjectURL(state.previewURL);
@@ -135,6 +161,8 @@ export function usePRDHTMLGeneration() {
         ...prev,
         generatedHTML: historyItem.htmlContent,
         previewURL: newPreviewURL,
+        buildInstructions: historyItem.buildInstructions || null,
+        instructionsSummary: historyItem.instructionsSummary || null,
         error: null
       }));
       return true;
@@ -153,9 +181,10 @@ export function usePRDHTMLGeneration() {
   // 重新生成（使用相同的数据和查询）
   const regenerate = useCallback(async (
     prdData: PRDGenerationData,
-    userQuery?: string
+    userQuery?: string,
+    modelId?: string
   ): Promise<boolean> => {
-    return generateHTMLPrototype(prdData, userQuery);
+    return generateHTMLPrototype(prdData, userQuery, modelId);
   }, [generateHTMLPrototype]);
 
   return {
@@ -163,9 +192,12 @@ export function usePRDHTMLGeneration() {
     isGenerating: state.isGenerating,
     generatedHTML: state.generatedHTML,
     previewURL: state.previewURL,
+    buildInstructions: state.buildInstructions,
+    instructionsSummary: state.instructionsSummary,
     error: state.error,
     generationHistory: state.generationHistory,
     hasPreview: !!state.generatedHTML,
+    hasBuildInstructions: !!state.buildInstructions,
 
     // 操作方法
     generateHTMLPrototype,

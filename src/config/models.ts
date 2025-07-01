@@ -128,6 +128,16 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
     hasWebSearch: true, // Gemini 2.0支持Google Search Grounding
   },
   // Gemini 2.5 系列模型
+  'gemini-2.5-flash': {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    provider: 'google',
+    apiKey: process.env.GEMINI_API_KEY || '',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    model: 'gemini-2.5-flash',
+    supportsStreaming: true,
+    hasWebSearch: true,
+  },
   'gemini-2.5-pro': {
     id: 'gemini-2.5-pro',
     name: 'Gemini 2.5 Pro',

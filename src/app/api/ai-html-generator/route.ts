@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ProxyAgent } from 'undici';
-import { request as undiciRequest } from 'undici';
+import { getModelConfig, ModelConfig } from '@/config/models';
+import { ProxyAgent, request as undiciRequest } from 'undici';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 interface HTMLGenerationRequest {
   prompt: string;
   modelId?: string;
 }
 
-interface ModelConfig {
-  provider: string;
-  model: string;
-  apiKey: string;
-  baseUrl: string;
-  hasWebSearch?: boolean;
-}
 
-interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
+
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,16 +47,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// AI调用核心函数
+// AI调用核心函数 - 支持多种提供商
 async function callAI(modelId: string, prompt: string): Promise<string> {
-  // 构建消息
-  const messages: ChatMessage[] = [
-    {
-      role: 'user',
-      content: prompt
-    }
-  ];
-
   // 获取模型配置
   const config = getModelConfig(modelId);
   if (!config) {
@@ -72,121 +56,242 @@ async function callAI(modelId: string, prompt: string): Promise<string> {
   }
 
   // 根据提供商调用不同的API
-  if (config.provider === 'google') {
-    return await callGeminiAPI(config, messages);
+  switch (config.provider) {
+    case 'google':
+      return await callGeminiWithUndici(config, prompt);
+    
+    case 'openai-proxy':
+    case 'anthropic-proxy':
+    case 'openrouter':
+      return await callOpenAICompatibleAPI(config, prompt);
+    
+    default:
+      throw new Error(`暂不支持的提供商: ${config.provider}`);
   }
-
-  // 其他提供商暂时未实现，可以在这里扩展
-  throw new Error(`暂不支持的提供商: ${config.provider}`);
 }
 
-// 获取模型配置
-function getModelConfig(modelId: string): ModelConfig | null {
-  const configs: Record<string, ModelConfig> = {
-    'gemini-2.0-flash': {
-      provider: 'google',
-      model: 'gemini-2.0-flash-experimental',
-      apiKey: process.env.GOOGLE_API_KEY || '',
-      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      hasWebSearch: false
-    },
-    'gemini-1.5-pro': {
-      provider: 'google', 
-      model: 'gemini-1.5-pro',
-      apiKey: process.env.GOOGLE_API_KEY || '',
-      baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-      hasWebSearch: false
-    }
-  };
-
-  const config = configs[modelId];
-  if (!config || !config.apiKey) {
-    console.error('模型配置无效或API Key缺失:', modelId);
-    return null;
-  }
-
-  return config;
-}
-
-// Gemini API调用（带重试机制）
-async function callGeminiAPI(config: ModelConfig, messages: ChatMessage[]): Promise<string> {
-  const contents = messages
-    .filter(msg => msg.role !== 'system')
-    .map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
-
-  const requestBody: Record<string, unknown> = {
-    contents,
-    generationConfig: {
-      temperature: 0.3, // 降低温度以获得更一致的代码输出
-      maxOutputTokens: 8192, // 增加输出限制以支持完整的HTML文件
-    }
-  };
-
-  const geminiUrl = `${config.baseUrl}/models/${config.model}:generateContent?key=${config.apiKey}`;
-
-  // 重试逻辑
-  const maxRetries = 2;
+// 添加重试函数
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 1): Promise<Response> {
   let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
     try {
-      console.log(`Gemini请求尝试 ${attempt}/${maxRetries}`);
-      
-      // 只在开发环境使用代理
-      const proxyAgent = process.env.NODE_ENV === 'development' 
-        ? new ProxyAgent('http://127.0.0.1:7890')
-        : undefined;
-      
-      const response = await undiciRequest(geminiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-        ...(proxyAgent && { dispatcher: proxyAgent }),
-        headersTimeout: 90000,  // 增加到90秒，HTML生成可能需要更长时间
-        bodyTimeout: 90000      // 增加到90秒
-      });
-
-      if (response.statusCode !== 200) {
-        const errorText = await response.body.text();
-        console.error('Gemini API错误:', response.statusCode, errorText);
-        throw new Error(`Gemini API错误: ${response.statusCode} ${errorText}`);
-      }
-
-      const result = await response.body.json() as Record<string, unknown>;
-      const content = (result.candidates as Array<{content: {parts: Array<{text: string}>}}>)?.[0]?.content?.parts?.[0]?.text;
-      
-      if (!content) {
-        throw new Error('Gemini返回空内容');
-      }
-
-      console.log('Gemini HTML生成请求成功，响应长度:', content.length);
-      return content;
+      console.log(`尝试请求 ${url} (第${attempt}次)`);
+      const response = await fetch(url, options);
+      console.log(`请求成功: ${response.status} ${response.statusText}`);
+      return response;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`Gemini请求尝试 ${attempt} 失败:`, lastError.message);
+      lastError = error as Error;
+      console.error(`请求失败 (第${attempt}次):`, error);
       
-      // 如果是网络连接错误且还有重试机会，等待后重试
-      if (attempt < maxRetries && (
-        lastError.message.includes('ECONNRESET') ||
-        lastError.message.includes('ETIMEDOUT') ||
-        lastError.message.includes('ENOTFOUND') ||
-        lastError.message.includes('socket')
-      )) {
-        const waitTime = attempt * 2000; // 2秒、4秒的递增等待
-        console.log(`等待 ${waitTime}ms 后重试...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        continue;
+      if (attempt <= maxRetries) {
+        const delay = attempt * 2000; // 递增延迟：2s, 4s
+        console.log(`等待 ${delay}ms 后重试...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-      
-      // 非网络错误或最后一次尝试失败，直接抛出
-      break;
     }
   }
+  
+  throw lastError;
+}
 
-  throw new Error(`Gemini请求失败: ${lastError?.message || '未知错误'}`);
-} 
+// 使用undici直接调用Gemini API - 参考chat-multi的实现
+async function callGeminiWithUndici(config: ModelConfig, prompt: string): Promise<string> {
+  try {
+    console.log('使用undici调用Gemini，模型:', config.model);
+    console.log('API Key长度:', config.apiKey.length, '(前5位:', config.apiKey.substring(0, 5) + '...)');
+    console.log('Base URL:', config.baseUrl);
+    
+    const geminiUrl = `${config.baseUrl}/models/${config.model}:generateContent?key=${config.apiKey}`;
+    console.log('完整URL:', geminiUrl.replace(config.apiKey, 'KEY_HIDDEN'));
+    
+    // 构建请求体 - 简化版，只处理单个prompt
+    const requestBody = {
+      contents: [
+        {
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 32768, // 大幅提升到32K tokens，约12万字符
+      }
+    };
+
+    // 代理配置：优先使用环境变量，然后根据环境判断
+    let proxyAgent = undefined;
+    
+    if (process.env.USE_PROXY === 'true') {
+      // 明确启用代理
+      const proxyUrl = process.env.PROXY_URL || 'http://127.0.0.1:7890';
+      proxyAgent = new ProxyAgent(proxyUrl);
+      console.log(`强制使用代理: ${proxyUrl}`);
+    } else if (process.env.USE_PROXY === 'false') {
+      // 明确禁用代理
+      console.log('强制禁用代理，使用直连');
+    } else if (process.env.NODE_ENV === 'development') {
+      // 开发环境默认尝试使用代理，但允许失败
+      try {
+        proxyAgent = new ProxyAgent('http://127.0.0.1:7890');
+        console.log('开发环境默认使用代理: 127.0.0.1:7890');
+      } catch (error) {
+        console.log('代理初始化失败，将使用直连:', error);
+        proxyAgent = undefined;
+      }
+    }
+
+    if (proxyAgent) {
+      console.log('正在为Gemini配置undici代理...');
+    }
+    
+    const response = await undiciRequest(geminiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+      ...(proxyAgent && { dispatcher: proxyAgent }),
+      headersTimeout: 120000,  // 增加到120秒，Gemini 2.5 Pro需要更长时间
+      bodyTimeout: 180000     // 增加到180秒，给最慢的模型足够时间
+    });
+
+    if (response.statusCode !== 200) {
+      const errorText = await response.body.text();
+      console.error('Gemini API错误:', response.statusCode, errorText);
+      throw new Error(`Gemini API错误: ${response.statusCode} - ${errorText}`);
+    }
+
+    const result = await response.body.json() as Record<string, unknown>;
+    const content = (result.candidates as Array<{content: {parts: Array<{text: string}>}}>)?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!content) {
+      throw new Error('Gemini返回空内容');
+    }
+
+    console.log('Gemini undici调用成功，响应长度:', content.length);
+    return content;
+
+  } catch (error) {
+    console.error('Gemini undici调用失败:', error);
+    
+    if (error instanceof Error) {
+      if (error.message.includes('API_KEY_INVALID') || error.message.includes('401')) {
+        throw new Error('Gemini API密钥无效，请检查GEMINI_API_KEY环境变量');
+      } else if (error.message.includes('Connect Timeout') || error.message.includes('timeout')) {
+        throw new Error(`连接Gemini API超时，请检查网络连接或代理设置。代理服务器(127.0.0.1:7890)是否正常工作？`);
+      }
+      throw new Error(`Gemini API调用失败: ${error.message}`);
+    }
+    
+    throw new Error('Gemini API调用失败: 未知错误');
+  }
+}
+
+// OpenAI兼容API调用函数（支持 GPT、Claude、DeepSeek等）
+async function callOpenAICompatibleAPI(config: ModelConfig, prompt: string): Promise<string> {
+  try {
+    console.log('调用OpenAI兼容API，提供商:', config.provider, '模型:', config.model);
+    
+    // 构建API URL
+    const apiUrl = `${config.baseUrl}/chat/completions`;
+    
+    // 构建请求头
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // 根据提供商设置认证头
+    switch (config.provider) {
+      case 'openai-proxy':
+        headers['x-auth-key'] = config.apiKey;
+        break;
+      case 'anthropic-proxy':
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+        break;
+      case 'openrouter':
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+        headers['HTTP-Referer'] = 'https://pm-assistant.vercel.app';
+        headers['X-Title'] = 'PM Assistant';
+        break;
+      default:
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+    }
+    
+    // 构建请求体 - 针对不同提供商优化参数
+    const requestBody: Record<string, unknown> = {
+      model: config.model,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.3,
+      stream: false
+    };
+    
+    // 根据提供商和模型设置合适的token限制
+    if (config.provider === 'openrouter') {
+      // DeepSeek 等免费模型，提升到16K
+      requestBody.max_tokens = 16384;
+    } else if (config.provider === 'openai-proxy') {
+      // OpenAI模型有16K的限制
+      requestBody.max_tokens = 16384;
+    } else if (config.provider === 'anthropic-proxy') {
+      // Claude模型，设置到16K
+      requestBody.max_tokens = 16384;
+    } else {
+      // 其他模型提升到32K
+      requestBody.max_tokens = 32768;
+    }
+    
+    // 配置代理（仅开发环境）
+    const fetchOptions: RequestInit = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(180000), // 增加到180秒，给最慢的模型足够时间
+    };
+    
+    // 在开发环境下为需要代理的提供商配置代理
+    if (process.env.NODE_ENV === 'development' && process.env.USE_PROXY === 'true') {
+      const proxyUrl = process.env.PROXY_URL || 'http://127.0.0.1:7890';
+      (fetchOptions as RequestInit & { agent?: unknown }).agent = new HttpsProxyAgent(proxyUrl);
+      console.log(`为${config.provider}配置代理: ${proxyUrl}`);
+    }
+    
+    const response = await fetchWithRetry(apiUrl, fetchOptions, 1); // 允许1次重试
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API错误:', response.status, errorText);
+      throw new Error(`API错误: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    const content = result.choices?.[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('API返回空内容');
+    }
+    
+    console.log('OpenAI兼容API调用成功，响应长度:', content.length);
+    return content;
+    
+  } catch (error) {
+    console.error('OpenAI兼容API调用失败:', error);
+    
+    if (error instanceof Error) {
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        throw new Error(`${config.provider} API密钥无效，请检查配置`);
+      } else if (error.name === 'AbortError' || error.message.includes('timeout') || error.message.includes('Timeout')) {
+        throw new Error(`连接${config.provider} API超时，请检查网络连接或增加超时时间`);
+      } else if (error.message.includes('ECONNREFUSED') || error.message.includes('network')) {
+        throw new Error(`无法连接到${config.provider} API，请检查网络和代理设置`);
+      }
+      throw new Error(`${config.provider} API调用失败: ${error.message}`);
+    }
+    
+    throw new Error(`${config.provider} API调用失败: 未知错误`);
+  }
+}
