@@ -342,7 +342,7 @@ export default function Plan() {
         duration: 0.25, 
         staggerChildren: prefersReducedMotion ? 0 : 0.05,
         when: "beforeChildren",
-        ease: [0.2, 0.65, 0.3, 0.9] // Custom easing curve for Apple-like feel
+        ease: "easeOut" // Custom easing curve for Apple-like feel
       }
     },
     exit: {
@@ -395,17 +395,7 @@ export default function Plan() {
     }
   };
 
-  // Status badge animation variants
-  const statusBadgeVariants = {
-    initial: { scale: 1 },
-    animate: { 
-      scale: prefersReducedMotion ? 1 : [1, 1.08, 1],
-      transition: { 
-        duration: 0.35,
-        ease: [0.34, 1.56, 0.64, 1] // Springy custom easing for bounce effect
-      }
-    }
-  };
+
 
   return (
     <div className="bg-background text-foreground h-full overflow-auto p-2">
@@ -530,9 +520,7 @@ export default function Plan() {
                                       ? "bg-red-100 text-red-700"
                                       : "bg-muted text-muted-foreground"
                             }`}
-                            variants={statusBadgeVariants}
-                            initial="initial"
-                            animate="animate"
+
                             key={task.status} // Force animation on status change
                           >
                             {task.status}
