@@ -11,7 +11,6 @@ import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
 import PromptStashView from "@/components/prompt-stash/PromptStashView";
 import PRDHouseViewRefactored from "@/components/prd-house/PRDHouseViewRefactored";
 import { PRDGenerationData } from "@/lib/prd-generator";
-import { buildPRDToHTMLPrompt } from "@/prompts/prd-to-html-prompt";
 import { 
   MessageSquarePlus, 
   Lightbulb,
@@ -284,15 +283,41 @@ function AskAnythingPageContent() {
     }
   }, []);
 
-  // 创建原型生成提示词 - 使用现有的专业提示词系统
+  // 创建原型生成提示词 - 使用简化的直接提示词
   const createPrototypePrompt = (prdData: PRDGenerationData) => {
-    return buildPRDToHTMLPrompt({
-      prdData,
-      userQuery: '请生成一个现代化、可交互的产品原型，使用Tailwind CSS设计系统，确保具有完整的功能和良好的用户体验。'
-    });
+    const productName = prdData.requirementSolution?.sharedPrototype || '未命名产品';
+    const productDescription = prdData.answers?.['c1_requirement_intro'] || '';
+    const coreRequirements = prdData.answers?.['c2_requirement_goal'] || '';
+    const functionalRequirements = prdData.answers?.['c6_functional_requirements'] || '';
+    
+    return `
+请基于以下PRD信息，生成一个现代化、精美的产品原型：
+
+## 产品信息
+**产品名称**: ${productName}
+**产品描述**: ${productDescription}
+**核心需求**: ${coreRequirements}
+**功能需求**: ${functionalRequirements}
+
+## 设计要求
+1. **现代化视觉**: 使用现代Web应用的设计语言，包括精美的配色、优雅的间距、流畅的动画效果
+2. **组件质感**: 创造高质量的按钮、卡片、表单等组件，注重细节和用户体验
+3. **布局自由**: 根据产品特性设计最适合的布局结构，确保信息层次清晰
+4. **交互体验**: 添加悬停效果、加载状态、错误处理等完整的交互反馈
+5. **响应式设计**: 确保在不同设备上都有良好的显示效果
+
+## 技术要求
+- 使用Tailwind CSS实现所有样式
+- 图片使用 https://picsum.photos/width/height?random=N 格式，包含错误处理
+- 确保所有功能真实可用，不是演示文档
+- 在iframe环境中完美显示
+- 包含完整的JavaScript交互功能
+
+请生成完整的HTML页面，创造视觉精美、体验优秀的现代化产品界面。
+`;
   };
 
-  // PRD文档消息组件 - 气泡样式
+  // PRD文档消息组件 - 简化版
   const PrototypePRDMessage = () => {
     const [prdData, setPrdData] = useState<PRDGenerationData | null>(null);
 
@@ -951,8 +976,8 @@ function AskAnythingPageContent() {
               <div className="flex flex-col bg-white" style={{ width: '380px', minWidth: '380px', maxWidth: '380px' }}>
                 {/* PRD信息和步骤区域 */}
                 <div className="flex-1 overflow-y-auto p-4">
-                  <div className="space-y-6">
-                    {/* PRD文档消息 - 丰富样式 */}
+                  <div className="space-y-6 pb-8">
+                    {/* PRD文档消息 - 简化版 */}
                     <PrototypePRDMessage />
                     
                     {/* 错误信息气泡 */}
@@ -971,11 +996,17 @@ function AskAnythingPageContent() {
                     {prototypeError && (
                       <div className="w-full">
                         <button
-                          onClick={handlePrototypeMessage}
+                          onClick={() => {
+                            setPrototypeError(null);
+                            handlePrototypeMessage();
+                          }}
                           disabled={isGeneratingPrototype}
                           className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg px-4 py-3 text-sm font-medium transition-colors"
+                          style={{ 
+                            backgroundColor: isGeneratingPrototype ? '#fb923c' : '#ea580c'
+                          }}
                         >
-                          {isGeneratingPrototype ? '正在生成...' : '重新生成原型'}
+                          {isGeneratingPrototype ? '正在重新生成...' : '重新生成原型'}
                         </button>
                       </div>
                     )}

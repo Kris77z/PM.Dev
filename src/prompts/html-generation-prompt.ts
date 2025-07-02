@@ -73,11 +73,13 @@ ${JSON.stringify(prdData, null, 2)}
 - 使用box-shadow和border-radius
 - 渐变背景和精美配色
 
-### 图片要求
-- 使用高质量占位图片服务
-- 建议使用：https://picsum.photos/width/height
-- 或者：https://placeholder.com/widthxheight
-- 确保图片尺寸合适且加载快速
+### 图片要求（重要）
+- **强制使用Picsum Photos**：https://picsum.photos/width/height
+- **禁止使用其他图片服务**：via.placeholder.com、placeholder.com等可能无法访问
+- **标准URL格式**：https://picsum.photos/800/400、https://picsum.photos/400/300等
+- **必须包含有意义的alt属性**：不能使用"undefined"，要用描述性文字
+- **示例**：<img src="https://picsum.photos/400/300" alt="产品展示图" class="w-full h-48 object-cover">
+- 图片尺寸要合适且加载快速，建议宽度不超过1200px
 
 ### 交互效果
 - 按钮hover效果
@@ -91,6 +93,7 @@ ${JSON.stringify(prdData, null, 2)}
 3. **精美度**：确保每个元素都有精心设计的视觉效果
 4. **实用性**：基于PRD数据生成真实有用的内容
 5. **性能**：确保代码简洁高效，加载速度快
+6. **图片质量**：所有图片必须使用可靠的图片服务，确保能正常加载显示
 
 请生成一个完整的HTML文件：`;
 };

@@ -62,14 +62,14 @@ export interface SimpleTemplate {
       xl: string;
       "2xl": string;
     };
-    components?: Record<string, any>;
+    components?: Record<string, unknown>;
   };
   
   // 布局结构
-  layoutStructure: Record<string, any>;
+  layoutStructure: Record<string, unknown>;
   
   // 交互模式
-  interactionPatterns?: Record<string, any>;
+  interactionPatterns?: Record<string, unknown>;
   
   // 元数据
   trustScore: number;
