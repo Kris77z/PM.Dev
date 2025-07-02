@@ -315,7 +315,7 @@ export default function Plan() {
       opacity: 1, 
       y: 0,
       transition: { 
-        type: prefersReducedMotion ? "tween" : "spring", 
+        type: prefersReducedMotion ? "tween" as const : "spring" as const, 
         stiffness: 500, 
         damping: 30,
         duration: prefersReducedMotion ? 0.2 : undefined
