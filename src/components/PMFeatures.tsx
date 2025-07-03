@@ -1,8 +1,7 @@
 import { cn } from "@/lib/utils";
 import { 
-  IconSettings, 
-  IconFlame,
-  IconBrain
+  IconBrain,
+  IconBook
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 
@@ -13,32 +12,39 @@ interface FeatureProps {
   onClick: () => void;
 }
 
-export function PMFeatures({ onSelect }: { onSelect: (mode: 'optimize' | 'newProduct') => void }) {
+export function PMFeatures() {
   const router = useRouter();
 
   const features = [
+    // 隐藏这两个卡片
+    // {
+    //   title: "优化已有功能/页面",
+    //   description: "针对现有产品功能进行优化，提升用户体验和性能",
+    //   icon: <IconSettings size={24} />,
+    //   onClick: () => onSelect('optimize')
+    // },
+    // {
+    //   title: "开发全新产品",
+    //   description: "从零开始构思和规划一个全新的产品",
+    //   icon: <IconFlame size={24} />,
+    //   onClick: () => onSelect('newProduct')
+    // },
     {
-      title: "优化已有功能/页面",
-      description: "针对现有产品功能进行优化，提升用户体验和性能",
-      icon: <IconSettings size={24} />,
-      onClick: () => onSelect('optimize')
+      title: "Cursor 使用指南",
+      description: "更适合 PM 体质的 Cursor 使用指南",
+      icon: <IconBook size={24} />,
+      onClick: () => router.push('/cursor-guide')
     },
     {
-      title: "开发全新产品",
-      description: "从零开始构思和规划一个全新的产品",
-      icon: <IconFlame size={24} />,
-      onClick: () => onSelect('newProduct')
-    },
-    {
-      title: "Ask Anything",
-      description: "专业的文档和文稿助手，帮您处理各种写作需求",
+      title: "PM.DEV Hub",
+      description: "日常需求需要用到的一些工具",
       icon: <IconBrain size={24} />,
       onClick: () => router.push('/ask-anything')
     }
   ];
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 py-6 max-w-4xl mx-auto">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 py-6 max-w-4xl mx-auto">
       {features.map((feature) => (
         <Feature key={feature.title} {...feature} />
       ))}
