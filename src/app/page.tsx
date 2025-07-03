@@ -1,7 +1,5 @@
 'use client';
 
-import { ChatInput } from "@/components/chat/ChatInput";
-import { ChatThread } from "@/components/chat/ChatThread";
 import React, { useState } from "react";
 import ProductDefinitionForm from "@/components/ProductDefinitionForm";
 import TechnicalPlanningForm from "@/components/TechnicalPlanningForm";
@@ -17,7 +15,6 @@ import { IconSettings, IconPalette, IconArrowBack } from "@tabler/icons-react";
 import { generateAllDocuments } from '../lib/prd-generator'; // Import the reusable generator function
 // Import types from the central types file
 import {
-    PlanningMode,
     FlowAnswers,
     GenericAnswers,
     PlannedPagesOutput,
@@ -25,22 +22,7 @@ import {
     // AddFeatureAnswers // 暂时隐藏
 } from '../types';
 
-// Define Message type for chat
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-  // attachments?: AttachmentFromInput[]; // Future: for handling attachments with LLM
-}
 
-// Define Attachment type, consistent with ChatInput.tsx
-interface AttachmentFromInput {
-  url: string;
-  name: string;
-  contentType: string;
-  size: number;
-}
 
 // Extend CurrentForm to include new states for Simple UI Micro Adjustment flow
 export type CurrentForm = 
@@ -68,7 +50,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [generatedFiles, setGeneratedFiles] = useState<string[]>([]); // State to hold generated filenames
-  const [isChatOpen, setIsChatOpen] = useState<boolean>(false); // 控制聊天框是否显示
 
   // State for project analysis data for Simple UI form
   const [currentProjectAnalysis, setCurrentProjectAnalysis] = useState<ProjectAnalysisData | null>(null);
@@ -77,34 +58,7 @@ export default function Home() {
   // 添加一个状态来保存生成的指令文本
   const [generatedUIInstruction, setGeneratedUIInstruction] = useState<string>("");
 
-  // State for chat messages - lifted up from ChatThread
-  const [messages, setMessages] = useState<Message[]>(() => [
-    {
-      id: 'initial-assistant-message',
-      role: 'assistant',
-      content: '你不知道那你不会问我？',
-      timestamp: new Date(),
-    }
-  ]);
 
-  // Function to handle initial mode selection
-  const handleModeSelect = (mode: PlanningMode) => {
-    setFlowAnswers({}); // Reset answers when starting a new mode
-    setError(null); // Reset error
-    setIsLoading(false); // Reset loading
-    setCurrentProjectAnalysis(null); // Reset project analysis data
-    setIsLoadingAnalysisData(false);
-
-    if (mode === 'newProduct') {
-      setCurrentForm('product');
-    } else if (mode === 'optimize') {
-      setCurrentForm('optimizeChoice'); // Go to choice screen first
-    }
-    // 移除 addFeature 处理
-    // } else if (mode === 'addFeature') {
-    //   setCurrentForm('addFeatureForm');
-    // }
-  };
 
   // --- Callbacks for the 'newProduct' flow ---
   const handleProductFormComplete = (answers: GenericAnswers) => {
@@ -210,29 +164,13 @@ export default function Home() {
     }
   };
 
-   // Function to reset to the initial state (mode selection)
-  const resetToHome = () => {
-      setCurrentForm(null);
-      setFlowAnswers({}); // Reset flow answers
-      setError(null);
-      setIsLoading(false);
-      setGeneratedFiles([]); // Reset generated files list
-      setCurrentProjectAnalysis(null); // Reset project analysis data on reset
-      setIsLoadingAnalysisData(false);
-  };
-
-  // Function to toggle chat sidebar
-  const toggleChat = () => {
-    setIsChatOpen(!isChatOpen);
-  };
-
-   // Function to determine what content to render in the main area
+  // Function to determine what content to render in the main area
   const renderContent = () => {
     // --- Render based on the current form state ---
     switch (currentForm) {
       // New Product Flow Forms
       case 'product':
-        return <ProductDefinitionForm onComplete={handleProductFormComplete} onCancel={resetToHome} />;
+        return <ProductDefinitionForm onComplete={handleProductFormComplete} onCancel={() => setCurrentForm(null)} />;
       case 'page':
         return <PagePlanningForm onCompleteAll={handlePagePlanningComplete} />;
       case 'tech':
@@ -263,7 +201,6 @@ export default function Home() {
                   对现有功能的复杂逻辑和流程进行优化，可能需要修改或添加多个组件或文件
                 </p>
               </div>
-              
               <div
                 onClick={() => handleOptimizeChoice('simpleUI')}
                 className="flex flex-col p-6 relative group border border-gray-300 rounded-lg hover:border-black transition-all cursor-pointer h-full"
@@ -275,29 +212,22 @@ export default function Home() {
                 <div className="text-lg font-bold mb-2 relative z-10 group-hover:text-orange-600 transition-colors">
                   <div className="absolute left-0 top-2 h-0 group-hover:h-5 w-1 rounded-full bg-orange-500 transition-all duration-200 origin-center" />
                   <span className="group-hover:translate-x-2 transition duration-200 inline-block">
-                    简单 UI 调整
+                    简单UI微调
                   </span>
                 </div>
                 <p className="text-sm text-neutral-600 relative z-10 line-clamp-2 h-10">
-                  对 UI 进行简单的视觉调整，如颜色、大小、文字等，通常只涉及单个组件的样式修改
+                  对现有页面的UI元素进行简单调整，如颜色、布局、文字等视觉优化
                 </p>
               </div>
             </div>
-            
-            <div className="flex justify-center mt-6">
-              <button 
-                onClick={resetToHome}
-                className="py-2 px-4 text-sm text-gray-600 hover:text-gray-800 flex items-center"
-              >
-                <IconArrowBack size={16} className="mr-1" />
-                返回首页
-              </button>
-            </div>
+
+             {/* Back Button */}
+            <button onClick={() => setCurrentForm(null)} className="mt-4 w-full py-2 px-4 bg-gray-600 text-white font-semibold rounded-md shadow hover:bg-gray-700">返回首页</button>
           </div>
         );
 
       case 'optimizeForm':
-        return <OptimizationForm onComplete={handleOptimizeFormComplete} onCancel={resetToHome} />;
+        return <OptimizationForm onComplete={handleOptimizeFormComplete} onCancel={() => setCurrentForm(null)} />;
 
       // Add Feature Flow Forms
       // case 'addFeatureForm':
@@ -348,7 +278,7 @@ export default function Home() {
                 </div>
              )}
              {/* Back Button */}
-            <button onClick={resetToHome} className="mt-4 w-full py-2 px-4 bg-gray-600 text-white font-semibold rounded-md shadow hover:bg-gray-700">返回首页</button>
+            <button onClick={() => setCurrentForm(null)} className="mt-4 w-full py-2 px-4 bg-gray-600 text-white font-semibold rounded-md shadow hover:bg-gray-700">返回首页</button>
           </div>
         );
 
@@ -364,7 +294,7 @@ export default function Home() {
         return <SimpleUIMicroAdjustmentForm 
                   projectAnalysisData={currentProjectAnalysis} 
                   onSubmit={handleSimpleUIComplete} 
-                  onCancel={resetToHome} 
+                  onCancel={() => setCurrentForm(null)} 
                />;
 
       case 'simpleUIInstructionGenerated': // 新增：UI微调指令生成结果页面
@@ -413,7 +343,7 @@ export default function Home() {
             
             <div className="flex justify-between mt-6">
               <button
-                onClick={resetToHome}
+                onClick={() => setCurrentForm(null)}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md shadow-sm hover:bg-gray-50 flex items-center"
               >
                 <IconArrowBack size={16} className="mr-1" />
@@ -433,11 +363,10 @@ export default function Home() {
         );
 
       default:
-        // 初始状态：使用PMFeatures组件展示选项
+        // 初始状态：使用PMFeatures组件展示选项，移除副标题
         return (
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-xl font-semibold mb-6 text-center">请选择您的规划目标</h2>
-            <PMFeatures onSelect={handleModeSelect} />
+            <PMFeatures />
           </div>
         );
     }
@@ -449,135 +378,6 @@ export default function Home() {
       .then(() => alert("操作指令已复制到剪贴板"))
       .catch(err => console.error("复制失败:", err));
   };
-
-  // CHAT FUNCTIONALITY START
-  const handleSendMessageAndStreamResponse = async (userInput: string, attachments?: AttachmentFromInput[]) => {
-    if (!userInput.trim() && (!attachments || attachments.length === 0)) return;
-
-    // Log attachments for now, can be used later
-    if (attachments && attachments.length > 0) {
-      console.log("Received attachments in page.tsx:", attachments);
-      // Example: add attachments to userMessage if Message interface supports it
-      // userMessage.attachments = attachments;
-    }
-
-    const userMessage: Message = {
-      id: Date.now().toString() + '-user',
-      role: 'user',
-      content: userInput,
-      timestamp: new Date(),
-      // attachments: attachments, // If your Message interface is updated to include this typed array
-    };
-
-    const assistantMessageId = Date.now().toString() + '-assistant';
-    const initialAssistantMessage: Message = {
-      id: assistantMessageId,
-      role: 'assistant',
-      content: '', // AI reply starts empty, filled by stream
-      timestamp: new Date(),
-    };
-
-    setMessages(prevMessages => [...prevMessages, userMessage, initialAssistantMessage]);
-
-    const messagesForApi = [...messages, userMessage].map(msg => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: messagesForApi,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: { message: "请求失败，无法解析错误信息" } }));
-        console.error("API Error from /api/chat:", response.status, errorData);
-        setMessages(prevMessages =>
-          prevMessages.map(msg =>
-            msg.id === assistantMessageId
-              ? { ...msg, content: `错误: ${errorData.error?.message || errorData.details || response.statusText || '请求失败'}` }
-              : msg
-          )
-        );
-        return;
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("Failed to get response reader from /api/chat");
-      }
-      const decoder = new TextDecoder();
-      let accumulatedContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const jsonStr = line.substring(6).trim();
-            if (jsonStr === '[DONE]') {
-              if (accumulatedContent) {
-                   setMessages(prevMessages =>
-                      prevMessages.map(msg =>
-                        msg.id === assistantMessageId
-                          ? { ...msg, content: accumulatedContent }
-                          : msg
-                      ));
-              }
-              return;
-            }
-            if (jsonStr) {
-              try {
-                const parsedChunk = JSON.parse(jsonStr);
-                const deltaContent = parsedChunk.choices?.[0]?.delta?.content;
-                if (deltaContent) {
-                  accumulatedContent += deltaContent;
-                  setMessages(prevMessages =>
-                    prevMessages.map(msg =>
-                      msg.id === assistantMessageId
-                        ? { ...msg, content: accumulatedContent }
-                        : msg
-                    )
-                  );
-                }
-              } catch (e) {
-                console.error("Error parsing stream chunk from /api/chat:", e, "Chunk:", jsonStr);
-              }
-            }
-          }
-        }
-      }
-       if (accumulatedContent && messages.find(msg => msg.id === assistantMessageId)?.content !== accumulatedContent) {
-          setMessages(prevMessages =>
-              prevMessages.map(msg =>
-                  msg.id === assistantMessageId
-                  ? { ...msg, content: accumulatedContent }
-                  : msg
-              ));
-      }
-
-    } catch (error) {
-      console.error("Fetch Error to /api/chat:", error);
-      setMessages(prevMessages =>
-        prevMessages.map(msg =>
-          msg.id === assistantMessageId
-            ? { ...msg, content: `请求出错: ${error instanceof Error ? error.message : '未知错误'}` }
-            : msg
-        )
-      );
-    }
-  };
-  // CHAT FUNCTIONALITY END
 
   // --- Main JSX Structure ---
   return (
@@ -610,57 +410,19 @@ export default function Home() {
             )}
           </header>
 
-          {/* Main Content Area - Central content with optional chat sidebar */} 
+          {/* Main Content Area - Central content */} 
           <div className="w-full flex justify-center items-start relative">
             {/* Content Area for Forms or Selection Buttons - Always centered */}
             <main className="flex flex-col items-center justify-start w-full max-w-4xl">
               {renderContent()}
             </main>
-
-            {/* Chat Button - Fixed position */}
-            {!isChatOpen && (
-              <button 
-                onClick={toggleChat}
-                className="fixed bottom-8 right-8 bg-orange-500 hover:bg-orange-600 text-white rounded-full p-4 shadow-lg z-50"
-                aria-label="打开聊天窗口"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </button>
-            )}
-
-            {/* Chat Sidebar - Conditionally rendered based on isChatOpen */}
-            {isChatOpen && (
-              <aside className="fixed top-0 right-0 h-full w-[500px] bg-white shadow-lg p-4 z-40 border-l border-gray-200 flex flex-col">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center text-lg font-semibold text-gray-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    我的好AI
-                  </div>
-                  <button onClick={toggleChat} className="text-gray-500 hover:text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="flex-grow overflow-y-auto mb-4">
-                  <ChatThread messages={messages} />
-                </div>
-                <div className="mt-auto">
-                  <ChatInput onSendMessage={handleSendMessageAndStreamResponse} />
-                </div>
-              </aside>
-            )}
           </div>
         </div>
       </div>
 
       {/* Footer - 固定在底部 */}
       <footer className="text-center text-sm text-gray-500 dark:text-gray-400 w-full py-4">
-        © {new Date().getFullYear()} pm-assistant ziyi
+        © {new Date().getFullYear()} PM.DEV
       </footer>
     </div>
   );
