@@ -250,7 +250,7 @@ export default function PRDHouseViewRefactored() {
       sessionStorage.setItem('prdData', JSON.stringify(prdData));
       
       // 跳转到原型生成页面
-      router.push('/prototype');
+      router.push('/ask-anything?view=prototype-house');
     } catch (error) {
       console.error('保存PRD数据失败:', error);
       showAlert('error', '数据保存失败，请重试');
