@@ -4,14 +4,14 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { IconArrowBack, IconBook, IconCode, IconBulb, IconTarget, IconRocket } from '@tabler/icons-react';
 
-export default function CursorGuidePage() {
+export default function VibeCodingGuidePage() {
   const router = useRouter();
 
   const guideItems = [
     {
       icon: <IconTarget className="w-8 h-8" />,
       title: "明确需求",
-      description: "在使用Cursor之前，清晰地定义你想要实现的功能或解决的问题",
+      description: "在使用Vibe Coding之前，清晰地定义你想要实现的功能或解决的问题",
       tips: [
         "写下具体的功能需求",
         "准备相关的参考资料",
@@ -104,9 +104,9 @@ export default function CursorGuidePage() {
               <div className="ml-6">
                 <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                   <IconBook className="h-6 w-6 text-orange-500" />
-                  Cursor使用指南
+                  Vibe Coding 指南
                 </h1>
-                <p className="text-sm text-gray-500">更适合 PM 体质的 Cursor 使用指南</p>
+                <p className="text-sm text-gray-500">更适合 PM 体质的 Vibe Coding 指南</p>
               </div>
             </div>
           </div>
@@ -117,13 +117,13 @@ export default function CursorGuidePage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 介绍部分 */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">什么是Cursor？</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">什么是Vibe Coding？</h2>
           <p className="text-gray-600 mb-4">
-            Cursor是一款AI驱动的代码编辑器，专为提高开发效率而设计。作为产品经理，
-            你可以利用Cursor快速实现产品原型、验证想法，甚至参与到实际的产品开发中。
+            Vibe Coding是一种AI驱动的编程方法论，专为提高开发效率和代码质量而设计。作为产品经理，
+            你可以利用Vibe Coding快速实现产品原型、验证想法，甚至参与到实际的产品开发中。
           </p>
           <p className="text-gray-600">
-            本指南将帮助你掌握Cursor的核心功能，让你能够更好地与开发团队协作，
+            本指南将帮助你掌握Vibe Coding的核心理念和实践方法，让你能够更好地与开发团队协作，
             甚至独立完成一些简单的开发任务。
           </p>
         </div>
@@ -166,6 +166,29 @@ export default function CursorGuidePage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Vibe Coding核心理念 */}
+        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-bold text-orange-800 mb-4">Vibe Coding 核心理念</h2>
+          <ul className="space-y-3 text-orange-700">
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
+              <strong>直觉驱动：</strong>相信你的产品直觉，用代码验证想法
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
+              <strong>快速迭代：</strong>快速构建MVP，通过用户反馈持续改进
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
+              <strong>协作优先：</strong>代码是团队沟通的桥梁，不是技术壁垒
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></span>
+              <strong>用户导向：</strong>每一行代码都应该为用户价值服务
+            </li>
+          </ul>
         </div>
 
         {/* 注意事项 */}
