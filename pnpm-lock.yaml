@@ -2982,9 +2982,6 @@ packages:
   mlly@1.7.4:
     resolution: {integrity: sha512-qmdSIPC4bDJXgZTCR7XosJiNKySV7O215tsPtDN9iEO/7q/76b/ijtgRu/+epFXSJhijtTCCGp3DWS549P3xKw==}
 
-  motion-dom@12.15.0:
-    resolution: {integrity: sha512-D2ldJgor+2vdcrDtKJw48k3OddXiZN1dDLLWrS8kiHzQdYVruh0IoTwbJBslrnTXIPgFED7PBN2Zbwl7rNqnhA==}
-
   motion-dom@12.16.0:
     resolution: {integrity: sha512-Z2nGwWrrdH4egLEtgYMCEN4V2qQt1qxlKy/uV7w691ztyA41Q5Rbn0KNGbsNVDZr9E8PD2IOQ3hSccRnB6xWzw==}
 
@@ -6067,7 +6064,7 @@ snapshots:
 
   framer-motion@12.15.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
-      motion-dom: 12.15.0
+      motion-dom: 12.16.0
       motion-utils: 12.12.1
       tslib: 2.8.1
     optionalDependencies:
@@ -7077,10 +7074,6 @@ snapshots:
       pathe: 2.0.3
       pkg-types: 1.3.1
       ufo: 1.6.1
-
-  motion-dom@12.15.0:
-    dependencies:
-      motion-utils: 12.12.1
 
   motion-dom@12.16.0:
     dependencies:
