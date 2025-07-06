@@ -11,7 +11,7 @@ export type TreeNode = {
   label: string;
   icon?: React.ReactNode;
   children?: TreeNode[];
-  data?: unknown;
+  data?: any;
 };
 
 export type TreeViewProps = {
@@ -61,11 +61,7 @@ export function TreeView({
       setExpandedIds((prev) => {
         const newSet = new Set(prev);
         const isExpanded = newSet.has(nodeId);
-        if (isExpanded) {
-          newSet.delete(nodeId);
-        } else {
-          newSet.add(nodeId);
-        }
+        isExpanded ? newSet.delete(nodeId) : newSet.add(nodeId);
         onNodeExpand?.(nodeId, !isExpanded);
         return newSet;
       });
@@ -87,11 +83,9 @@ export function TreeView({
         newSelection = currentSelectedIds.includes(nodeId) ? [] : [nodeId];
       }
 
-      if (isControlled) {
-        onSelectionChange?.(newSelection);
-      } else {
-        setInternalSelectedIds(newSelection);
-      }
+      isControlled
+        ? onSelectionChange?.(newSelection)
+        : setInternalSelectedIds(newSelection);
     },
     [
       selectable,
@@ -116,19 +110,19 @@ export function TreeView({
     const getDefaultIcon = () =>
       hasChildren ? (
         isExpanded ? (
-          <FolderOpen className="h-6 w-6" />
+          <FolderOpen className="h-4 w-4" />
         ) : (
-          <Folder className="h-6 w-6" />
+          <Folder className="h-4 w-4" />
         )
       ) : (
-        <File className="h-6 w-6" />
+        <File className="h-4 w-4" />
       );
 
     return (
       <div key={node.id} className="select-none">
         <motion.div
           className={cn(
-            "flex items-center py-2 px-3 cursor-pointer transition-all duration-200 relative group rounded-md mx-1",
+            "flex items-center py-2 px-3 cursor-pointer transition-all duration-200 relative group rounded-md",
             "hover:bg-accent/50",
             isSelected && "bg-accent/80",
             selectable && "hover:border-accent-foreground/10",
@@ -179,19 +173,19 @@ export function TreeView({
 
           {/* Expand Icon */}
           <motion.div
-            className="flex items-center justify-center w-6 h-6 mr-2"
+            className="flex items-center justify-center w-4 h-4 mr-1"
             animate={{ rotate: hasChildren && isExpanded ? 90 : 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
           >
             {hasChildren && (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
             )}
           </motion.div>
 
           {/* Node Icon */}
           {showIcons && (
             <motion.div
-              className="flex items-center justify-center w-6 h-6 mr-3 text-muted-foreground"
+              className="flex items-center justify-center w-4 h-4 mr-2 text-muted-foreground"
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.15 }}
             >
@@ -200,7 +194,7 @@ export function TreeView({
           )}
 
           {/* Label */}
-          <span className="text-base font-medium truncate flex-1">
+          <span className="text-sm font truncate flex-1">
             {node.label}
           </span>
         </motion.div>
@@ -246,14 +240,14 @@ export function TreeView({
   return (
     <motion.div
       className={cn(
-        "w-full",
+        "w-full bg-background border border-border rounded-xl",
         className,
       )}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
-      <div className="p-2">
+      <div className="p-0">
         {data.map((node, index) =>
           renderNode(node, 0, index === data.length - 1),
         )}

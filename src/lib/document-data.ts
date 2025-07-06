@@ -7,7 +7,6 @@ export interface DocumentItem {
   level: 1 | 2;
   parentId?: string;
   content?: string;
-  icon?: string;
   firstHeading?: string;
   secondHeading?: string;
   subHeadings?: string[];
@@ -27,190 +26,266 @@ export const iconMap: { [key: string]: string } = {
 // 默认文档数据
 export const defaultDocuments: DocumentItem[] = [
   {
-    id: 'getting-started',
-    label: '开始使用',
-    level: 1,
-    icon: 'IconRocket',
-    firstHeading: '产品介绍',
-    secondHeading: '核心价值',
-    subHeadings: ['提升效率', '质量保障', '创新突破']
-  },
-  {
-    id: 'introduction',
-    label: '产品介绍',
-    level: 2,
-    parentId: 'getting-started',
-    icon: 'IconBook',
-    firstHeading: 'PM Assistant - 智能产品需求文档助手',
-    secondHeading: '核心价值',
-    subHeadings: ['提升效率', '质量保障', '创新突破'],
-    content: `# PM Assistant - 智能产品需求文档助手
-
-PM Assistant 是一个基于AI的产品需求文档(PRD)智能编写助手，专为产品经理设计，帮助快速、高效地创建专业的PRD文档。
-
-## 🚀 核心价值
-
-### 1. 提升效率
-- **10倍速度提升**：从传统的数周PRD编写缩短到数小时
-- **智能化辅助**：AI自动生成用户场景、竞品分析、技术方案
-- **模板化流程**：标准化的PRD模板，确保内容完整性
-
-### 2. 质量保障
-- **四层质量检查**：完整性、质量、逻辑一致性、专业程度
-- **实时验证**：自动检查必填字段和内容质量
-- **专业标准**：符合行业PRD编写标准
-
-### 3. 创新突破
-- **参考模板系统**：从"零生成"升级为"参考生成"
-- **智能原型生成**：PRD直接生成HTML原型
-- **深度研究能力**：基于LangGraph的智能任务规划
-
-## 🎯 适用场景
-
-- **初级产品经理**：快速上手PRD编写
-- **资深产品经理**：提升工作效率，专注战略思考
-- **创业团队**：快速验证产品想法
-- **咨询顾问**：为客户提供专业的产品规划`
-  },
-  {
-    id: 'quick-start',
+    id: '1',
     label: '快速开始',
+    level: 1
+  },
+  {
+    id: '1-1',
+    label: '安装指南',
     level: 2,
-    parentId: 'getting-started',
-    icon: 'IconTarget',
-    firstHeading: '快速开始指南',
-    secondHeading: '5分钟快速上手',
-    subHeadings: ['环境准备', '启动项目', '创建第一个PRD'],
-    content: `# 快速开始指南
+    parentId: '1',
+    content: `# 安装指南
 
-## 🚀 5分钟快速上手
+## 系统要求
 
-### 第一步：环境准备
-1. **获取API密钥**
-   - GPT-4o API Key (必需)
-   - Claude API Key (可选)
-   - Gemini API Key (可选)
+- Node.js 18.0 或更高版本
+- npm 或 yarn 包管理器
 
-2. **配置环境变量**
+## 安装步骤
+
+1. 克隆项目
 \`\`\`bash
-# 复制环境变量文件
-cp env.example .env.local
-
-# 编辑配置文件
-GPT4O_API_KEY=your_gpt4o_api_key_here
-GPT4O_BASE_URL=https://your-gpt4o-proxy.example.com/v1
+git clone https://github.com/your-repo/pm-assistant.git
+cd pm-assistant
 \`\`\`
 
-### 第二步：启动项目
+2. 安装依赖
 \`\`\`bash
-# 安装依赖
-pnpm install
-
-# 启动开发服务器
-pnpm dev
+npm install
 \`\`\`
 
-### 第三步：创建第一个PRD
-1. 访问 http://localhost:3000
-2. 点击"创建新PRD"
-3. 填写基本信息
-4. 使用AI助手功能完善内容
-5. 生成完整PRD文档`
+3. 启动开发服务器
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## 验证安装
+
+打开浏览器访问 http://localhost:3000 查看应用是否正常运行。`,
+    firstHeading: '安装指南',
+    secondHeading: '系统要求',
+    subHeadings: ['安装步骤', '验证安装']
   },
   {
-    id: 'features',
-    label: '功能特性',
-    level: 1,
-    icon: 'IconBulb',
-    firstHeading: 'AI助手功能',
-    secondHeading: '用户场景AI扩展',
-    subHeadings: ['智能竞品分析', '内容质量审查', '智能PRD生成']
-  },
-  {
-    id: 'ai-features',
-    label: 'AI助手功能',
+    id: '1-2',
+    label: '基本配置',
     level: 2,
-    parentId: 'features',
-    icon: 'IconCode',
-    firstHeading: 'AI助手功能 🤖',
-    secondHeading: '用户场景AI扩展',
-    subHeadings: ['功能介绍', '工作原理', '使用示例'],
-    content: `# AI助手功能 🤖
+    parentId: '1',
+    content: `# 基本配置
 
-## 🔍 用户场景AI扩展
+## 环境变量
 
-### 功能介绍
-基于需求介绍，自动生成多个用户使用场景，帮助产品经理全面理解用户需求。
+创建 \`.env.local\` 文件：
 
-### 工作原理
-1. **输入**：需求介绍内容
-2. **AI分析**：理解用户需求和业务场景
-3. **输出**：结构化的用户场景数据
-   - 用户类型分析
-   - 具体使用场景
-   - 痛点和需求分析`
+\`\`\`
+NEXT_PUBLIC_APP_NAME=PM Assistant
+NEXT_PUBLIC_APP_VERSION=1.0.0
+\`\`\`
+
+## 配置文件
+
+修改 \`next.config.js\` 文件以适应您的需求。
+
+### 基本设置
+
+- 设置应用名称
+- 配置端口号
+- 设置环境变量`,
+    firstHeading: '基本配置',
+    secondHeading: '环境变量',
+    subHeadings: ['配置文件', '基本设置']
   },
   {
-    id: 'vibe-coding',
-    label: 'Vibe Coding',
-    level: 1,
-    icon: 'IconCode',
-    firstHeading: 'Vibe Coding 使用指南',
-    secondHeading: '什么是Vibe Coding？',
-    subHeadings: ['核心原则', '实用提示词模板', '最佳实践']
+    id: '2',
+    label: '功能介绍',
+    level: 1
   },
   {
-    id: 'vibe-coding-guide',
-    label: '使用指南',
+    id: '2-1',
+    label: 'PRD 编写',
     level: 2,
-    parentId: 'vibe-coding',
-    icon: 'IconBook',
-    firstHeading: 'Vibe Coding 使用指南',
-    secondHeading: '什么是Vibe Coding？',
-    subHeadings: ['核心原则', '实用提示词模板', '最佳实践'],
-    content: `# Vibe Coding 使用指南
+    parentId: '2',
+    content: `# PRD 编写功能
 
-## 什么是Vibe Coding？
+## 功能概述
 
-Vibe Coding是一种AI驱动的编程方法论，专为提高开发效率和代码质量而设计。`
+PM Assistant 提供智能化的产品需求文档编写功能，帮助产品经理快速创建专业的PRD。
+
+## 主要特性
+
+### 模板支持
+- 多种PRD模板
+- 自定义模板
+- 模板导入导出
+
+### 智能辅助
+- AI内容建议
+- 自动格式化
+- 内容检查
+
+### 协作功能
+- 实时编辑
+- 评论系统
+- 版本控制`,
+    firstHeading: 'PRD 编写功能',
+    secondHeading: '功能概述',
+    subHeadings: ['主要特性', '模板支持', '智能辅助', '协作功能']
+  },
+  {
+    id: '2-2',
+    label: '团队协作',
+    level: 2,
+    parentId: '2',
+    content: `# 团队协作
+
+## 协作模式
+
+支持多种团队协作模式，提升工作效率。
+
+## 权限管理
+
+### 角色定义
+- 管理员：完全权限
+- 编辑者：编辑权限
+- 查看者：只读权限
+
+### 权限控制
+- 文档级别权限
+- 功能级别权限
+- 操作级别权限
+
+## 沟通工具
+
+- 内置聊天
+- 评论系统
+- 通知提醒`,
+    firstHeading: '团队协作',
+    secondHeading: '协作模式',
+    subHeadings: ['权限管理', '角色定义', '权限控制', '沟通工具']
+  },
+  {
+    id: '3',
+    label: '高级功能',
+    level: 1
+  },
+  {
+    id: '3-1',
+    label: 'API 集成',
+    level: 2,
+    parentId: '3',
+    content: `# API 集成
+
+## REST API
+
+提供完整的 REST API 接口。
+
+## 接口文档
+
+### 认证接口
+\`\`\`
+POST /api/auth/login
+POST /api/auth/logout
+POST /api/auth/refresh
+\`\`\`
+
+### 文档接口
+\`\`\`
+GET /api/documents
+POST /api/documents
+PUT /api/documents/:id
+DELETE /api/documents/:id
+\`\`\`
+
+## SDK 支持
+
+- JavaScript SDK
+- Python SDK
+- Java SDK
+
+## 示例代码
+
+\`\`\`javascript
+const client = new PMAssistantClient({
+  apiKey: 'your-api-key'
+});
+
+const documents = await client.documents.list();
+\`\`\``,
+    firstHeading: 'API 集成',
+    secondHeading: 'REST API',
+    subHeadings: ['接口文档', '认证接口', '文档接口', 'SDK 支持', '示例代码']
+  },
+  {
+    id: '3-2',
+    label: '插件开发',
+    level: 2,
+    parentId: '3',
+    content: `# 插件开发
+
+## 插件架构
+
+基于模块化设计的插件系统。
+
+## 开发指南
+
+### 创建插件
+1. 创建插件目录
+2. 编写插件配置
+3. 实现插件逻辑
+4. 注册插件
+
+### 插件API
+\`\`\`javascript
+export default class MyPlugin {
+  constructor(config) {
+    this.config = config;
+  }
+  
+  async activate() {
+    // 插件激活逻辑
+  }
+  
+  async deactivate() {
+    // 插件停用逻辑
+  }
+}
+\`\`\`
+
+## 发布插件
+
+- 插件商店
+- 版本管理
+- 用户评价`,
+    firstHeading: '插件开发',
+    secondHeading: '插件架构',
+    subHeadings: ['开发指南', '创建插件', '插件API', '发布插件']
   }
 ];
 
 // 将DocumentItem数组转换为TreeNode数组
 export const convertToTreeNodes = (documents: DocumentItem[]): TreeNode[] => {
-  const level1Docs = documents.filter(doc => doc.level === 1);
+  const level1Items = documents.filter(doc => doc.level === 1);
   
-  return level1Docs.map(doc => {
+  return level1Items.map(level1 => {
     const children = documents
-      .filter(child => child.parentId === doc.id)
-      .map(child => ({
-        id: child.id,
-        label: child.label,
-        icon: getIconComponent(child.icon || 'IconBook'),
-        data: {
-          title: child.label,
-          content: child.content || ''
-        }
+      .filter(doc => doc.level === 2 && doc.parentId === level1.id)
+      .map(level2 => ({
+        id: level2.id,
+        label: level2.label,
+        content: level2.content,
+        firstHeading: level2.firstHeading,
+        secondHeading: level2.secondHeading,
+        subHeadings: level2.subHeadings
       }));
-
+    
     return {
-      id: doc.id,
-      label: doc.label,
-      icon: getIconComponent(doc.icon || 'IconBook'),
-      children: children.length > 0 ? children : undefined,
-      data: children.length === 0 ? {
-        title: doc.label,
-        content: doc.content || ''
-      } : undefined
+      id: level1.id,
+      label: level1.label,
+      children: children.length > 0 ? children : undefined
     };
   });
 };
-
-// 获取图标组件的函数（需要在使用的地方导入具体图标）
-function getIconComponent(iconName: string) {
-  // 这里返回一个占位符，实际使用时需要在组件中替换
-  return `<${iconName} className="w-5 h-5" />`;
-}
 
 // 数据存储和获取函数
 export const getDocumentData = (): DocumentItem[] => {
@@ -231,4 +306,10 @@ export const saveDocumentData = (documents: DocumentItem[]): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('pm-assistant-documents', JSON.stringify(documents));
   }
+};
+
+// 重置为默认数据
+export const resetToDefaultData = () => {
+  saveDocumentData(defaultDocuments);
+  return defaultDocuments;
 }; 
