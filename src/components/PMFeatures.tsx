@@ -30,10 +30,10 @@ export function PMFeatures() {
     //   onClick: () => onSelect('newProduct')
     // },
     {
-      title: "Cursor 使用指南",
-      description: "更适合 PM 体质的 Cursor 使用指南",
+      title: "Vibe Coding 指南",
+      description: "更适合 PM 体质的 Vibe Coding 指南",
       icon: <IconBook size={24} />,
-      onClick: () => router.push('/cursor-guide')
+      onClick: () => router.push('/vibe-coding')
     },
     {
       title: "PM.DEV Hub",
