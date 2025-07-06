@@ -38,16 +38,21 @@ CREATE TRIGGER update_documents_updated_at
 -- 启用 RLS (Row Level Security)
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
+-- 删除可能存在的旧策略
+DROP POLICY IF EXISTS "Allow public read access" ON documents;
+DROP POLICY IF EXISTS "Allow public write access" ON documents;
+
 -- 创建策略：允许所有人读取
-CREATE POLICY IF NOT EXISTS "Allow public read access" ON documents
+CREATE POLICY "Allow public read access" ON documents
   FOR SELECT USING (true);
 
 -- 创建策略：允许所有人插入、更新、删除（生产环境中应该限制权限）
-CREATE POLICY IF NOT EXISTS "Allow public write access" ON documents
+CREATE POLICY "Allow public write access" ON documents
   FOR ALL USING (true);
 
 -- 注意：在生产环境中，您应该创建更严格的安全策略
 -- 例如，只允许认证用户进行写操作：
+-- DROP POLICY "Allow public write access" ON documents;
 -- CREATE POLICY "Allow authenticated users to modify" ON documents
 --   FOR ALL USING (auth.role() = 'authenticated');
 

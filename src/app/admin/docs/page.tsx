@@ -19,10 +19,22 @@ import {
   IconBlockquote,
   IconMinus,
   IconTable,
-  IconPhoto
+  IconPhoto,
+  IconCloudUpload,
+  IconCloudDownload,
+  IconRefresh,
+  IconDownload,
+  IconDatabase
 } from '@tabler/icons-react';
 import { TreeView, TreeNode } from '@/components/ui/tree-view';
 import { saveDocumentData, getDocumentData, DocumentItem } from '@/lib/document-data';
+import { 
+  migrateLocalDataToSupabase, 
+  downloadSupabaseDataToLocal, 
+  compareLocalAndSupabaseData,
+  exportDataAsJSON,
+  getLocalStorageData 
+} from '@/lib/data-migration';
 
 export default function AdminDocsPage() {
   const router = useRouter();
@@ -33,6 +45,8 @@ export default function AdminDocsPage() {
   const [editingValue, setEditingValue] = useState<string>('');
   const [showEditor, setShowEditor] = useState<string | null>(null);
   const [editorContent, setEditorContent] = useState<string>('');
+  const [migrationStatus, setMigrationStatus] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 加载文档数据
   useEffect(() => {
@@ -278,6 +292,82 @@ export default function AdminDocsPage() {
     }
   };
 
+  // 数据迁移：从 localStorage 到 Supabase
+  const handleMigrateToSupabase = async () => {
+    setIsLoading(true);
+    setMigrationStatus('正在迁移数据到云端...');
+    
+    try {
+      const result = await migrateLocalDataToSupabase();
+      setMigrationStatus(result.message);
+      
+      if (result.success) {
+        // 重新加载数据
+        const data = await getDocumentData();
+        setDocuments(data);
+        setTimeout(() => setMigrationStatus(''), 3000);
+      }
+    } catch (error) {
+      setMigrationStatus('迁移失败：' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 数据下载：从 Supabase 到 localStorage
+  const handleDownloadFromSupabase = async () => {
+    setIsLoading(true);
+    setMigrationStatus('正在从云端下载数据...');
+    
+    try {
+      const result = await downloadSupabaseDataToLocal();
+      setMigrationStatus(result.message);
+      
+      if (result.success) {
+        // 重新加载数据
+        const data = await getDocumentData();
+        setDocuments(data);
+        setTimeout(() => setMigrationStatus(''), 3000);
+      }
+    } catch (error) {
+      setMigrationStatus('下载失败：' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 数据比较
+  const handleCompareData = async () => {
+    setIsLoading(true);
+    setMigrationStatus('正在比较本地和云端数据...');
+    
+    try {
+      const result = await compareLocalAndSupabaseData();
+      setMigrationStatus(
+        `本地: ${result.localCount} 条 | 云端: ${result.supabaseCount} 条 | ${result.recommendation}`
+      );
+      setTimeout(() => setMigrationStatus(''), 5000);
+    } catch (error) {
+      setMigrationStatus('比较失败：' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 导出本地数据
+  const handleExportLocalData = () => {
+    const localData = getLocalStorageData();
+    if (localData.length === 0) {
+      setMigrationStatus('本地存储中没有数据可导出');
+      setTimeout(() => setMigrationStatus(''), 3000);
+      return;
+    }
+    
+    exportDataAsJSON(localData, `pm-assistant-local-backup-${new Date().toISOString().split('T')[0]}.json`);
+    setMigrationStatus(`已导出 ${localData.length} 条本地数据`);
+    setTimeout(() => setMigrationStatus(''), 3000);
+  };
+
   const selectedDoc = getSelectedDocument();
   const treeData = convertToTreeData(documents);
 
@@ -295,6 +385,13 @@ export default function AdminDocsPage() {
         </div>
 
         <div className="px-6 pb-6 border-t border-gray-200 space-y-2">
+          {/* 状态显示 */}
+          {migrationStatus && (
+            <div className="text-xs text-center p-2 bg-blue-50 text-blue-700 rounded border">
+              {migrationStatus}
+            </div>
+          )}
+
           <button
             onClick={() => addNewItem()}
             className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
@@ -316,10 +413,57 @@ export default function AdminDocsPage() {
           <button
             onClick={handlePublish}
             className="w-full bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
+            disabled={isLoading}
           >
             <IconUpload className="h-4 w-4" />
             发布更新
           </button>
+
+          {/* 数据迁移区域 */}
+          <div className="border-t pt-2 space-y-1">
+            <div className="text-xs text-gray-500 text-center mb-2 flex items-center justify-center gap-1">
+              <IconDatabase className="h-3 w-3" />
+              数据管理
+            </div>
+            
+            <button
+              onClick={handleMigrateToSupabase}
+              className="w-full bg-cyan-500 text-white px-3 py-1.5 text-sm rounded hover:bg-cyan-600 transition-colors flex items-center justify-center gap-1"
+              disabled={isLoading}
+            >
+              <IconCloudUpload className="h-3 w-3" />
+              上传到云端
+            </button>
+
+            <button
+              onClick={handleDownloadFromSupabase}
+              className="w-full bg-indigo-500 text-white px-3 py-1.5 text-sm rounded hover:bg-indigo-600 transition-colors flex items-center justify-center gap-1"
+              disabled={isLoading}
+            >
+              <IconCloudDownload className="h-3 w-3" />
+              从云端下载
+            </button>
+
+            <div className="flex gap-1">
+              <button
+                onClick={handleCompareData}
+                className="flex-1 bg-orange-500 text-white px-2 py-1.5 text-xs rounded hover:bg-orange-600 transition-colors flex items-center justify-center gap-1"
+                disabled={isLoading}
+              >
+                <IconRefresh className="h-3 w-3" />
+                比较
+              </button>
+              
+              <button
+                onClick={handleExportLocalData}
+                className="flex-1 bg-teal-500 text-white px-2 py-1.5 text-xs rounded hover:bg-teal-600 transition-colors flex items-center justify-center gap-1"
+                disabled={isLoading}
+              >
+                <IconDownload className="h-3 w-3" />
+                导出
+              </button>
+            </div>
+          </div>
 
           <button
             onClick={() => router.push('/')}
