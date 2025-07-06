@@ -67,6 +67,35 @@
 - **生产级标准**：完整的HTML + Tailwind CSS + Vanilla JavaScript
 - **真实数据模拟**：生成真实感的示例数据
 
+### 📚 智能文档管理系统 ⭐ (新功能)
+
+#### 🌐 云端文档存储
+- **功能**：基于 Supabase 的云端文档存储系统
+- **特点**：
+  - 跨用户数据共享：所有用户看到相同的文档内容
+  - 实时同步：管理员更新后立即对所有用户生效
+  - 本地回退：网络问题时自动使用本地存储
+  - 数据安全：RLS 权限控制，保障数据安全
+
+#### 📝 管理员编辑界面 (`/admin/docs`)
+- **富文本编辑器**：支持 Markdown 语法的全功能编辑器
+- **实时预览**：编辑时实时查看效果
+- **层级管理**：支持一级目录和二级文档的树形结构
+- **批量操作**：支持导入导出、批量编辑
+- **发布控制**：一键发布更新到云端
+
+#### 🎨 用户展示界面 (`/vibe-coding`)
+- **优雅展示**：现代化的文档阅读界面
+- **树形导航**：清晰的文档结构导航
+- **响应式设计**：完美适配各种设备
+- **Markdown 渲染**：完整支持 Markdown 格式
+
+#### 🔄 数据同步机制
+- **智能回退**：Supabase → localStorage → 默认数据
+- **错误处理**：网络问题自动重试和降级
+- **状态提示**：清晰的保存状态和错误提示
+- **数据一致性**：确保云端和本地数据同步
+
 ### 🚀 V2 高级研究系统 (基于LangGraph) （暂未全部完成，当前写死2轮循环任务，AI自动拆解正在测试中）
 
 #### 🧠 智能任务规划
@@ -97,6 +126,12 @@
 - **UI组件**：Radix UI + shadcn/ui
 - **图标**：Lucide React
 - **类型安全**：TypeScript
+
+### 数据存储
+- **云端数据库**：Supabase (PostgreSQL)
+- **本地存储**：localStorage (回退方案)
+- **数据同步**：实时云端同步，支持跨用户数据共享
+- **安全策略**：RLS (Row Level Security) 权限控制
 
 ### AI集成
 - **GPT-4o**：默认的文本生成和分析模型
@@ -153,6 +188,10 @@ GPT4O_BASE_URL=https://your-gpt4o-proxy.example.com/v1
 # Firecrawl深度内容抓取（V2功能）
 FIRECRAWL_API_KEY=fc-your-firecrawl-api_key_here
 
+# Supabase 数据库配置（文档云端存储）
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key-here
+
 # 可选的备用模型（都支持内置网络搜索）
 CLAUDE_API_KEY=your_claude_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
@@ -164,7 +203,16 @@ OPENROUTER_API_KEY=your_openrouter_api_key_here
 pnpm install
 ```
 
-4. **启动开发服务器**
+4. **配置 Supabase（可选，用于文档云端存储）**
+```bash
+# 详细设置指南请参考：docs/SUPABASE_SETUP.md
+# 快速配置：
+# 1. 创建 Supabase 项目
+# 2. 运行 docs/supabase-setup.sql 脚本
+# 3. 在 .env.local 中添加 URL 和密钥
+```
+
+5. **启动开发服务器**
 ```bash
 pnpm dev
 ```

@@ -36,11 +36,14 @@ export default function AdminDocsPage() {
 
   // 加载文档数据
   useEffect(() => {
-    const data = getDocumentData();
-    setDocuments(data);
-    if (data.length > 0) {
-      setSelectedNodeId(data[0].id);
-    }
+    const loadData = async () => {
+      const data = await getDocumentData();
+      setDocuments(data);
+      if (data.length > 0) {
+        setSelectedNodeId(data[0].id);
+      }
+    };
+    loadData();
   }, []);
 
   // 转换文档数据为树形结构
@@ -266,9 +269,13 @@ export default function AdminDocsPage() {
   };
 
   // 发布到展示页面
-  const handlePublish = () => {
-    saveDocumentData(documents);
-    alert('已发布到展示页面！');
+  const handlePublish = async () => {
+    const success = await saveDocumentData(documents);
+    if (success) {
+      alert('已成功发布到云端！所有用户都能看到更新的内容。');
+    } else {
+      alert('发布失败，数据已保存到本地存储！');
+    }
   };
 
   const selectedDoc = getSelectedDocument();

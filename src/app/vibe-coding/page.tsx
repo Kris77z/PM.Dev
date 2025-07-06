@@ -14,14 +14,17 @@ export default function VibeCodingPage() {
 
   // 加载文档数据
   useEffect(() => {
-    const data = getDocumentData();
-    setDocuments(data);
-    
-    // 默认选择第一个有内容的二级文档
-    const firstContentDoc = data.find(doc => doc.level === 2 && doc.content);
-    if (firstContentDoc) {
-      setSelectedNodeId(firstContentDoc.id);
-    }
+    const loadData = async () => {
+      const data = await getDocumentData();
+      setDocuments(data);
+      
+      // 默认选择第一个有内容的二级文档
+      const firstContentDoc = data.find(doc => doc.level === 2 && doc.content);
+      if (firstContentDoc) {
+        setSelectedNodeId(firstContentDoc.id);
+      }
+    };
+    loadData();
   }, []);
 
   // 转换文档数据为树形结构

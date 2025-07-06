@@ -1,4 +1,5 @@
 import { TreeNode } from '@/components/ui/tree-view';
+import { supabase, type DatabaseDocumentItem } from './supabase';
 
 // 文档数据接口
 export interface DocumentItem {
@@ -287,29 +288,172 @@ export const convertToTreeNodes = (documents: DocumentItem[]): TreeNode[] => {
   });
 };
 
-// 数据存储和获取函数
-export const getDocumentData = (): DocumentItem[] => {
+// 数据库到应用数据的转换
+const convertFromDatabase = (dbItems: DatabaseDocumentItem[]): DocumentItem[] => {
+  return dbItems.map(item => ({
+    id: item.id,
+    label: item.label,
+    level: item.level as 1 | 2,
+    parentId: item.parent_id || undefined,
+    content: item.content || undefined,
+    firstHeading: item.first_heading || undefined,
+    secondHeading: item.second_heading || undefined,
+    subHeadings: item.sub_headings || undefined
+  }));
+};
+
+// 应用数据到数据库的转换
+const convertToDatabase = (items: DocumentItem[]): Omit<DatabaseDocumentItem, 'created_at' | 'updated_at'>[] => {
+  return items.map(item => ({
+    id: item.id,
+    label: item.label,
+    level: item.level,
+    parent_id: item.parentId || null,
+    content: item.content || null,
+    first_heading: item.firstHeading || null,
+    second_heading: item.secondHeading || null,
+    sub_headings: item.subHeadings || null
+  }));
+};
+
+// localStorage 回退函数
+const getLocalStorageData = (): DocumentItem[] => {
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('pm-assistant-documents');
     if (stored) {
       try {
         return JSON.parse(stored);
       } catch (e) {
-        console.error('Failed to parse stored documents:', e);
+        console.error('解析本地存储数据失败:', e);
       }
     }
   }
   return defaultDocuments;
 };
 
-export const saveDocumentData = (documents: DocumentItem[]): void => {
+const saveLocalStorageData = (documents: DocumentItem[]): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('pm-assistant-documents', JSON.stringify(documents));
   }
 };
 
+// 从 Supabase 获取文档数据（异步）
+export const getDocumentData = async (): Promise<DocumentItem[]> => {
+  // 检查是否配置了 Supabase
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.log('Supabase 未配置，使用本地存储');
+    return getLocalStorageData();
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .order('level', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('获取文档数据失败:', error);
+      console.log('回退到本地存储');
+      return getLocalStorageData();
+    }
+
+    if (!data || data.length === 0) {
+      console.log('数据库为空，返回默认数据');
+      return defaultDocuments;
+    }
+
+    return convertFromDatabase(data);
+  } catch (error) {
+    console.error('Supabase 连接失败:', error);
+    console.log('回退到本地存储');
+    return getLocalStorageData();
+  }
+};
+
+// 同步版本（用于向后兼容）
+export const getDocumentDataSync = (): DocumentItem[] => {
+  return getLocalStorageData();
+};
+
+// 保存文档数据到 Supabase（异步）
+export const saveDocumentData = async (documents: DocumentItem[]): Promise<boolean> => {
+  // 总是先保存到本地存储作为备份
+  saveLocalStorageData(documents);
+
+  // 检查是否配置了 Supabase
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.log('Supabase 未配置，仅保存到本地存储');
+    return true;
+  }
+
+  try {
+    // 删除现有数据
+    const { error: deleteError } = await supabase
+      .from('documents')
+      .delete()
+      .neq('id', '');
+
+    if (deleteError) {
+      console.error('删除现有数据失败:', deleteError);
+      return false;
+    }
+
+    // 插入新数据
+    const dbData = convertToDatabase(documents);
+    const { error: insertError } = await supabase
+      .from('documents')
+      .insert(dbData);
+
+    if (insertError) {
+      console.error('保存文档数据失败:', insertError);
+      return false;
+    }
+
+    console.log('数据已成功保存到 Supabase');
+    return true;
+  } catch (error) {
+    console.error('Supabase 保存失败:', error);
+    return false;
+  }
+};
+
+// 同步版本（用于向后兼容）
+export const saveDocumentDataSync = (documents: DocumentItem[]): void => {
+  saveLocalStorageData(documents);
+};
+
 // 重置为默认数据
-export const resetToDefaultData = () => {
-  saveDocumentData(defaultDocuments);
+export const resetToDefaultData = async (): Promise<DocumentItem[]> => {
+  const success = await saveDocumentData(defaultDocuments);
+  if (!success) {
+    saveLocalStorageData(defaultDocuments);
+  }
   return defaultDocuments;
+};
+
+// 初始化数据库（仅在数据库为空时插入默认数据）
+export const initializeDatabase = async (): Promise<void> => {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('id')
+      .limit(1);
+
+    if (error) {
+      console.error('检查数据库状态失败:', error);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      console.log('数据库为空，插入默认数据');
+      await saveDocumentData(defaultDocuments);
+    }
+  } catch (error) {
+    console.error('初始化数据库失败:', error);
+  }
 }; 
