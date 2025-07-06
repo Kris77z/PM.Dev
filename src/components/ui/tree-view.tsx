@@ -11,7 +11,7 @@ export type TreeNode = {
   label: string;
   icon?: React.ReactNode;
   children?: TreeNode[];
-  data?: any;
+  data?: unknown;
 };
 
 export type TreeViewProps = {
@@ -61,7 +61,11 @@ export function TreeView({
       setExpandedIds((prev) => {
         const newSet = new Set(prev);
         const isExpanded = newSet.has(nodeId);
-        isExpanded ? newSet.delete(nodeId) : newSet.add(nodeId);
+        if (isExpanded) {
+          newSet.delete(nodeId);
+        } else {
+          newSet.add(nodeId);
+        }
         onNodeExpand?.(nodeId, !isExpanded);
         return newSet;
       });
@@ -83,9 +87,11 @@ export function TreeView({
         newSelection = currentSelectedIds.includes(nodeId) ? [] : [nodeId];
       }
 
-      isControlled
-        ? onSelectionChange?.(newSelection)
-        : setInternalSelectedIds(newSelection);
+      if (isControlled) {
+        onSelectionChange?.(newSelection);
+      } else {
+        setInternalSelectedIds(newSelection);
+      }
     },
     [
       selectable,

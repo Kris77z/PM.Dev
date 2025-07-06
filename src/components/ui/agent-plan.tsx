@@ -331,27 +331,22 @@ export default function Plan() {
   const subtaskListVariants = {
     hidden: { 
       opacity: 0, 
-      height: 0,
-      overflow: "hidden" 
+      height: 0
     },
     visible: { 
       height: "auto", 
       opacity: 1,
-      overflow: "visible",
       transition: { 
         duration: 0.25, 
         staggerChildren: prefersReducedMotion ? 0 : 0.05,
-        when: "beforeChildren",
-        ease: "easeOut" // Custom easing curve for Apple-like feel
+        when: "beforeChildren" as const
       }
     },
     exit: {
       height: 0,
       opacity: 0,
-      overflow: "hidden",
       transition: { 
-        duration: 0.2,
-        ease: [0.2, 0.65, 0.3, 0.9]
+        duration: 0.2
       }
     }
   };
@@ -365,10 +360,7 @@ export default function Plan() {
       opacity: 1, 
       x: 0,
       transition: { 
-        type: prefersReducedMotion ? "tween" : "spring", 
-        stiffness: 500, 
-        damping: 25,
-        duration: prefersReducedMotion ? 0.2 : undefined
+        duration: 0.2
       }
     },
     exit: {
@@ -381,16 +373,13 @@ export default function Plan() {
   const subtaskDetailsVariants = {
     hidden: { 
       opacity: 0, 
-      height: 0,
-      overflow: "hidden"
+      height: 0
     },
     visible: { 
       opacity: 1, 
       height: "auto",
-      overflow: "visible",
       transition: { 
-        duration: 0.25,
-        ease: [0.2, 0.65, 0.3, 0.9]
+        duration: 0.25
       }
     }
   };
