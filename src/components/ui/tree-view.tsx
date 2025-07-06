@@ -122,7 +122,7 @@ export function TreeView({
       <div key={node.id} className="select-none">
         <motion.div
           className={cn(
-            "flex items-center py-2 px-3 cursor-pointer transition-all duration-200 relative group rounded-md mx-1",
+            "flex items-center py-2 px-3 cursor-pointer transition-all duration-200 relative group rounded-md",
             "hover:bg-accent/50",
             isSelected && "bg-accent/80",
             selectable && "hover:border-accent-foreground/10",
@@ -247,7 +247,7 @@ export function TreeView({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
-      <div className="p-2">
+      <div className="p-0">
         {data.map((node, index) =>
           renderNode(node, 0, index === data.length - 1),
         )}

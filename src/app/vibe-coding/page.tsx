@@ -135,17 +135,17 @@ export default function VibeCodingPage() {
   const treeData = convertToTreeData(documents);
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="h-screen bg-white flex">
       {/* 左侧导航栏 */}
       <div className="w-80 bg-gray-50 flex flex-col">
         {/* 头部 */}
-        <div className="px-6 py-6">
+        <div className="px-6 pt-6 pb-4">
           <h1 className="text-xl font-bold text-gray-900">Vibe Coding</h1>
           <p className="text-sm text-gray-600 mt-1">知识库文档</p>
         </div>
 
-        {/* 树形导航 */}
-        <div className="flex-1 overflow-auto px-6 pb-4">
+        {/* 树形导航 - 移除左右间距，与标题左对齐 */}
+        <div className="flex-1 overflow-auto pb-4">
           <TreeView
             data={treeData}
             onNodeClick={handleNodeClick}
@@ -160,7 +160,7 @@ export default function VibeCodingPage() {
         <div className="px-6 pb-6">
           <motion.button
             onClick={() => router.push('/')}
-            className="w-full flex items-center py-2 px-3 cursor-pointer transition-all duration-200 relative group rounded-md mx-1 hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+            className="w-full flex items-center py-2 px-3 cursor-pointer transition-all duration-200 relative group rounded-md hover:bg-accent/50 text-muted-foreground hover:text-foreground"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.15 }}
@@ -182,16 +182,15 @@ export default function VibeCodingPage() {
         {selectedDoc ? (
           <>
             {/* 文档头部 */}
-            <div className="bg-white px-6 py-6">
+            <div className="bg-white px-6 py-6 flex-shrink-0 relative">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{selectedDoc.label}</h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  {selectedDoc.level === 1 ? '一级目录' : '二级目录'}
-                </p>
               </div>
+              {/* 渐变阴影 */}
+              <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-b from-transparent to-gray-100/20 pointer-events-none"></div>
             </div>
 
-            {/* 文档内容 */}
+            {/* 文档内容 - 固定高度并允许滚动 */}
             <div className="flex-1 overflow-auto">
               <div className="px-6">
                 {selectedDoc.level === 2 && selectedDoc.content ? (
