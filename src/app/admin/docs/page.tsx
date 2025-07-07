@@ -651,7 +651,7 @@ export default function AdminDocsPage() {
                     ) : (
                       <div>
                         <p className="mb-4">📄 空白文档</p>
-                        <p>点击"编辑"按钮来添加内容</p>
+                        <p>点击&ldquo;编辑&rdquo;按钮来添加内容</p>
                       </div>
                     )}
                   </div>
