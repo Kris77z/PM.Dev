@@ -6,35 +6,22 @@ import {
   IconEdit,
   IconTrash,
   IconPlus,
-  IconUpload,
   IconHome,
   IconBold,
   IconItalic,
-  IconUnderline,
-  IconStrikethrough,
   IconCode,
   IconLink,
   IconList,
   IconListNumbers,
   IconBlockquote,
-  IconMinus,
-  IconTable,
   IconPhoto,
-  IconCloudUpload,
-  IconCloudDownload,
-  IconRefresh,
-  IconDownload,
-  IconDatabase
+  IconDeviceFloppy,
+  IconX,
+  IconEye,
+  IconRefresh
 } from '@tabler/icons-react';
 import { TreeView, TreeNode } from '@/components/ui/tree-view';
 import { saveDocumentData, getDocumentData, DocumentItem } from '@/lib/document-data';
-import { 
-  migrateLocalDataToSupabase, 
-  downloadSupabaseDataToLocal, 
-  compareLocalAndSupabaseData,
-  exportDataAsJSON,
-  getLocalStorageData 
-} from '@/lib/data-migration';
 
 export default function AdminDocsPage() {
   const router = useRouter();
@@ -45,18 +32,33 @@ export default function AdminDocsPage() {
   const [editingValue, setEditingValue] = useState<string>('');
   const [showEditor, setShowEditor] = useState<string | null>(null);
   const [editorContent, setEditorContent] = useState<string>('');
-  const [migrationStatus, setMigrationStatus] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveStatus, setSaveStatus] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // 图片数据存储
+  const [imageDataMap, setImageDataMap] = useState<Map<string, string>>(new Map());
 
   // 加载文档数据
-  useEffect(() => {
-    const loadData = async () => {
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
       const data = await getDocumentData();
+      console.log('📊 加载的数据:', data.length, '条记录');
       setDocuments(data);
-      if (data.length > 0) {
+      if (data.length > 0 && !selectedNodeId) {
         setSelectedNodeId(data[0].id);
       }
-    };
+    } catch (error) {
+      console.error('加载数据失败:', error);
+      setSaveStatus('❌ 加载失败');
+      setTimeout(() => setSaveStatus(''), 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadData();
   }, []);
 
@@ -86,6 +88,10 @@ export default function AdminDocsPage() {
   // 处理节点点击
   const handleNodeClick = (node: TreeNode) => {
     setSelectedNodeId(node.id);
+    // 如果正在编辑其他内容，先关闭编辑器
+    if (showEditor && showEditor !== node.id) {
+      setShowEditor(null);
+    }
   };
 
   // 添加新项目
@@ -94,35 +100,72 @@ export default function AdminDocsPage() {
     const level = parentId ? 2 : 1;
     const newItem: DocumentItem = {
       id: newId,
-      label: '新项目',
+      label: '新文档',
       level,
       parentId,
-      content: level === 2 ? '# 新项目\n\n在这里添加内容...' : undefined
+      content: level === 2 ? '# 新文档\n\n在这里添加内容...' : undefined
     };
     const newDocs = [...documents, newItem];
     setDocuments(newDocs);
     setSelectedNodeId(newId);
-  };
-
-  // 删除项目
-  const deleteItem = (id: string) => {
-    if (confirm('确定要删除这个项目吗？')) {
-      const newDocs = documents.filter(doc => doc.id !== id);
-      setDocuments(newDocs);
-      if (selectedNodeId === id) {
-        setSelectedNodeId(newDocs.length > 0 ? newDocs[0].id : null);
-      }
+    
+    // 如果是二级文档，直接打开编辑器
+    if (level === 2) {
+      setTimeout(() => {
+        openEditor(newId, newItem.content || '');
+      }, 100);
     }
   };
 
-  // 开始编辑
+  // 删除项目
+  const deleteItem = async (id: string) => {
+    const doc = documents.find(d => d.id === id);
+    if (!doc) return;
+    
+    if (confirm(`确定要删除 "${doc.label}" 吗？${doc.level === 1 ? '这将同时删除所有子文档。' : ''}`)) {
+      let newDocs = documents.filter(doc => doc.id !== id);
+      
+      // 如果删除的是一级目录，同时删除其子文档
+      if (doc.level === 1) {
+        newDocs = newDocs.filter(d => d.parentId !== id);
+      }
+      
+      setDocuments(newDocs);
+      
+      if (selectedNodeId === id) {
+        setSelectedNodeId(newDocs.length > 0 ? newDocs[0].id : null);
+      }
+      
+      // 如果正在编辑被删除的文档，关闭编辑器
+      if (showEditor === id) {
+        setShowEditor(null);
+      }
+
+      // 立即保存到数据库
+      setSaveStatus('🗑️ 正在删除...');
+      try {
+        const success = await saveDocumentData(newDocs);
+        if (success) {
+          setSaveStatus('✅ 删除成功');
+        } else {
+          setSaveStatus('❌ 删除失败');
+        }
+      } catch (error) {
+        console.error('删除失败:', error);
+        setSaveStatus('❌ 删除失败');
+      }
+      setTimeout(() => setSaveStatus(''), 3000);
+    }
+  };
+
+  // 开始编辑标题
   const startEdit = (id: string, field: string, value: string) => {
     setEditingId(id);
     setEditingField(field);
     setEditingValue(value);
   };
 
-  // 保存编辑
+  // 保存标题编辑
   const saveEdit = () => {
     if (editingId && editingField) {
       setDocuments(documents.map(doc => 
@@ -146,7 +189,73 @@ export default function AdminDocsPage() {
   // 打开内容编辑器
   const openEditor = (id: string, content: string) => {
     setShowEditor(id);
-    setEditorContent(content || '');
+    // 清空之前的图片数据映射
+    setImageDataMap(new Map());
+    
+    // 将base64图片转换为简洁的ID形式
+    let editableContent = content || '';
+    const newImageDataMap = new Map<string, string>();
+    
+    // 查找并替换所有base64图片
+    const base64ImageRegex = /!\[([^\]]*)\]\(data:image\/[^;]+;base64,([^)]+)\)/g;
+    editableContent = editableContent.replace(base64ImageRegex, (fullMatch, altText, base64Data) => {
+      const imageId = `image_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // 存储图片数据
+      newImageDataMap.set(imageId, `data:image/jpeg;base64,${base64Data}`);
+      
+      // 返回简洁的ID形式
+      return `![${altText}](${imageId})`;
+    });
+    
+    // 更新图片数据映射
+    setImageDataMap(newImageDataMap);
+    setEditorContent(editableContent);
+  };
+
+
+
+  // 简单的Markdown预览渲染函数
+  const renderMarkdownPreview = (content: string): string => {
+    let html = content;
+    
+    // 处理标题
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    
+    // 处理粗体和斜体
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    
+    // 处理内联代码
+    html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+    
+    // 处理代码块
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    
+    // 处理链接
+    html = html.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+    
+    // 处理图片 - 使用内存中的图片数据
+    html = html.replace(/!\[(.+?)\]\((.+?)\)/g, (match, altText, src) => {
+      // 检查是否是图片ID，如果是则从内存中获取base64数据
+      const imageData = imageDataMap.get(src);
+      const actualSrc = imageData || src;
+      return `<img src="${actualSrc}" alt="${altText}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />`;
+    });
+    
+    // 处理列表
+    html = html.replace(/^\- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
+    
+    // 处理引用
+    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    
+    // 处理换行
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
   };
 
   // 保存编辑器内容
@@ -154,10 +263,17 @@ export default function AdminDocsPage() {
     if (showEditor) {
       const updatedDocs = documents.map(doc => {
         if (doc.id === showEditor) {
-          const updated = { ...doc, content: editorContent };
+          // 将图片ID转换为完整的base64数据
+          let processedContent = editorContent;
+          imageDataMap.forEach((base64Data, imageId) => {
+            const imageIdRegex = new RegExp(`\\!\\[([^\\]]+)\\]\\(${imageId}\\)`, 'g');
+            processedContent = processedContent.replace(imageIdRegex, `![$1](${base64Data})`);
+          });
+          
+          const updated = { ...doc, content: processedContent };
           
           // 自动解析标题
-          const lines = editorContent.split('\n');
+          const lines = processedContent.split('\n');
           const firstHeading = lines.find(line => line.startsWith('# '))?.replace('# ', '') || '';
           const secondHeading = lines.find(line => line.startsWith('## '))?.replace('## ', '') || '';
           const subHeadings = lines.filter(line => line.startsWith('### ')).map(line => line.replace('### ', ''));
@@ -175,7 +291,42 @@ export default function AdminDocsPage() {
       setDocuments(updatedDocs);
       setShowEditor(null);
       setEditorContent('');
+      // 清空图片数据映射
+      setImageDataMap(new Map());
     }
+  };
+
+  // 保存所有更改到数据库
+  const saveAllChanges = async () => {
+    setIsSaving(true);
+    setSaveStatus('💾 正在保存...');
+    
+    try {
+      const success = await saveDocumentData(documents);
+      if (success) {
+        setSaveStatus('✅ 保存成功');
+      } else {
+        setSaveStatus('❌ 保存失败');
+      }
+    } catch (error) {
+      console.error('保存失败:', error);
+      setSaveStatus('❌ 保存失败');
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveStatus(''), 3000);
+    }
+  };
+
+  // 刷新数据
+  const refreshData = async () => {
+    await loadData();
+    setSaveStatus('🔄 数据已刷新');
+    setTimeout(() => setSaveStatus(''), 2000);
+  };
+
+  // 预览页面
+  const previewPage = () => {
+    window.open('/vibe-coding', '_blank');
   };
 
   // 富文本编辑器工具栏
@@ -199,12 +350,6 @@ export default function AdminDocsPage() {
       case 'italic':
         newText = `${beforeText}*${textToInsert}*${afterText}`;
         break;
-      case 'underline':
-        newText = `${beforeText}<u>${textToInsert}</u>${afterText}`;
-        break;
-      case 'strikethrough':
-        newText = `${beforeText}~~${textToInsert}~~${afterText}`;
-        break;
       case 'code':
         newText = `${beforeText}\`${textToInsert}\`${afterText}`;
         break;
@@ -223,12 +368,6 @@ export default function AdminDocsPage() {
       case 'quote':
         newText = `${beforeText}\n> ${textToInsert || '引用内容'}\n${afterText}`;
         break;
-      case 'hr':
-        newText = `${beforeText}\n---\n${afterText}`;
-        break;
-      case 'table':
-        newText = `${beforeText}\n| 标题1 | 标题2 | 标题3 |\n|-------|-------|-------|\n| 内容1 | 内容2 | 内容3 |\n${afterText}`;
-        break;
       default:
         return;
     }
@@ -241,7 +380,7 @@ export default function AdminDocsPage() {
       if (selectedText) {
         textarea.setSelectionRange(start, start + textToInsert.length + syntax.length * 2);
       } else {
-        const newCursorPos = start + (syntax === 'codeblock' ? 4 : syntax === 'table' ? 10 : 2);
+        const newCursorPos = start + (syntax === 'codeblock' ? 4 : 2);
         textarea.setSelectionRange(newCursorPos, newCursorPos + (placeholder ? placeholder.length : 0));
       }
     }, 10);
@@ -254,8 +393,33 @@ export default function AdminDocsPage() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64 = e.target?.result as string;
-        const imageMarkdown = `![${file.name}](${base64})`;
-        setEditorContent(prev => prev + '\n' + imageMarkdown);
+        // 生成一个简短的图片标识符
+        const imageId = `image_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // 存储图片数据到内存
+        setImageDataMap(prev => new Map(prev).set(imageId, base64));
+        
+        // 在光标位置插入简洁的图片标记
+        const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const beforeText = editorContent.substring(0, start);
+          const afterText = editorContent.substring(end);
+          
+          const imageMarkdown = `![${file.name}](${imageId})`;
+          
+          // 在光标位置插入图片标记
+          const newContent = beforeText + imageMarkdown + afterText;
+          setEditorContent(newContent);
+          
+          // 重新设置光标位置
+          setTimeout(() => {
+            textarea.focus();
+            const newCursorPos = start + imageMarkdown.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+          }, 10);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -271,8 +435,33 @@ export default function AdminDocsPage() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const base64 = event.target?.result as string;
-        const imageMarkdown = `![${file.name}](${base64})`;
-        setEditorContent(prev => prev + '\n' + imageMarkdown);
+        // 生成一个简短的图片标识符
+        const imageId = `image_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // 存储图片数据到内存
+        setImageDataMap(prev => new Map(prev).set(imageId, base64));
+        
+        // 在光标位置插入简洁的图片标记
+        const textarea = document.getElementById('content-editor') as HTMLTextAreaElement;
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const beforeText = editorContent.substring(0, start);
+          const afterText = editorContent.substring(end);
+          
+          const imageMarkdown = `![${file.name}](${imageId})`;
+          
+          // 在光标位置插入图片标记
+          const newContent = beforeText + imageMarkdown + afterText;
+          setEditorContent(newContent);
+          
+          // 重新设置光标位置
+          setTimeout(() => {
+            textarea.focus();
+            const newCursorPos = start + imageMarkdown.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+          }, 10);
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -282,196 +471,103 @@ export default function AdminDocsPage() {
     e.preventDefault();
   };
 
-  // 发布到展示页面
-  const handlePublish = async () => {
-    const success = await saveDocumentData(documents);
-    if (success) {
-      alert('已成功发布到云端！所有用户都能看到更新的内容。');
-    } else {
-      alert('发布失败，数据已保存到本地存储！');
-    }
-  };
 
-  // 数据迁移：从 localStorage 到 Supabase
-  const handleMigrateToSupabase = async () => {
-    setIsLoading(true);
-    setMigrationStatus('正在迁移数据到云端...');
-    
-    try {
-      const result = await migrateLocalDataToSupabase();
-      setMigrationStatus(result.message);
-      
-      if (result.success) {
-        // 重新加载数据
-        const data = await getDocumentData();
-        setDocuments(data);
-        setTimeout(() => setMigrationStatus(''), 3000);
-      }
-    } catch (error) {
-      setMigrationStatus('迁移失败：' + (error instanceof Error ? error.message : '未知错误'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 数据下载：从 Supabase 到 localStorage
-  const handleDownloadFromSupabase = async () => {
-    setIsLoading(true);
-    setMigrationStatus('正在从云端下载数据...');
-    
-    try {
-      const result = await downloadSupabaseDataToLocal();
-      setMigrationStatus(result.message);
-      
-      if (result.success) {
-        // 重新加载数据
-        const data = await getDocumentData();
-        setDocuments(data);
-        setTimeout(() => setMigrationStatus(''), 3000);
-      }
-    } catch (error) {
-      setMigrationStatus('下载失败：' + (error instanceof Error ? error.message : '未知错误'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 数据比较
-  const handleCompareData = async () => {
-    setIsLoading(true);
-    setMigrationStatus('正在比较本地和云端数据...');
-    
-    try {
-      const result = await compareLocalAndSupabaseData();
-      setMigrationStatus(
-        `本地: ${result.localCount} 条 | 云端: ${result.supabaseCount} 条 | ${result.recommendation}`
-      );
-      setTimeout(() => setMigrationStatus(''), 5000);
-    } catch (error) {
-      setMigrationStatus('比较失败：' + (error instanceof Error ? error.message : '未知错误'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 导出本地数据
-  const handleExportLocalData = () => {
-    const localData = getLocalStorageData();
-    if (localData.length === 0) {
-      setMigrationStatus('本地存储中没有数据可导出');
-      setTimeout(() => setMigrationStatus(''), 3000);
-      return;
-    }
-    
-    exportDataAsJSON(localData, `pm-assistant-local-backup-${new Date().toISOString().split('T')[0]}.json`);
-    setMigrationStatus(`已导出 ${localData.length} 条本地数据`);
-    setTimeout(() => setMigrationStatus(''), 3000);
-  };
 
   const selectedDoc = getSelectedDocument();
   const treeData = convertToTreeData(documents);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* 左侧树形视图 */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        <div className="flex-1 overflow-auto px-6 py-4">
+      <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h1 className="text-xl font-bold text-gray-900 mb-4">📚 文档管理</h1>
+          
+          {/* 状态显示 */}
+          {saveStatus && (
+            <div className="text-xs text-center p-2 bg-blue-50 text-blue-700 rounded border mb-3">
+              {saveStatus}
+            </div>
+          )}
+
+          {/* 操作按钮 */}
+          <div className="space-y-2">
+            <button
+              onClick={() => addNewItem()}
+              className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 text-sm"
+            >
+              <IconPlus className="h-4 w-4" />
+              新建目录
+            </button>
+            
+            {selectedDoc && selectedDoc.level === 1 && (
+              <button
+                onClick={() => addNewItem(selectedDoc.id)}
+                className="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2 text-sm"
+              >
+                <IconPlus className="h-4 w-4" />
+                新建文档
+              </button>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={saveAllChanges}
+                disabled={isSaving}
+                className="flex-1 bg-purple-500 text-white px-3 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+              >
+                <IconDeviceFloppy className="h-4 w-4" />
+                {isSaving ? '保存中...' : '保存'}
+              </button>
+              
+              <button
+                onClick={refreshData}
+                className="bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-sm"
+              >
+                <IconRefresh className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={previewPage}
+                className="flex-1 bg-indigo-500 text-white px-3 py-2 rounded-lg hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2 text-sm"
+              >
+                <IconEye className="h-4 w-4" />
+                预览
+              </button>
+              
+              <button
+                onClick={() => router.push('/')}
+                className="flex-1 bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-sm"
+              >
+                <IconHome className="h-4 w-4" />
+                首页
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto px-6 pb-4">
           <TreeView
             data={treeData}
             onNodeClick={handleNodeClick}
             selectedIds={selectedNodeId ? [selectedNodeId] : []}
             className="bg-transparent border-0"
+            showLines={false}
+            indent={16}
           />
-        </div>
-
-        <div className="px-6 pb-6 border-t border-gray-200 space-y-2">
-          {/* 状态显示 */}
-          {migrationStatus && (
-            <div className="text-xs text-center p-2 bg-blue-50 text-blue-700 rounded border">
-              {migrationStatus}
-            </div>
-          )}
-
-          <button
-            onClick={() => addNewItem()}
-            className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
-          >
-            <IconPlus className="h-4 w-4" />
-            添加一级目录
-          </button>
-          
-          {selectedDoc && selectedDoc.level === 1 && (
-            <button
-              onClick={() => addNewItem(selectedDoc.id)}
-              className="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-            >
-              <IconPlus className="h-4 w-4" />
-              添加子目录
-            </button>
-          )}
-
-          <button
-            onClick={handlePublish}
-            className="w-full bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
-            disabled={isLoading}
-          >
-            <IconUpload className="h-4 w-4" />
-            发布更新
-          </button>
-
-          {/* 数据迁移区域 */}
-          <div className="border-t pt-2 space-y-1">
-            <div className="text-xs text-gray-500 text-center mb-2 flex items-center justify-center gap-1">
-              <IconDatabase className="h-3 w-3" />
-              数据管理
-            </div>
-            
-            <button
-              onClick={handleMigrateToSupabase}
-              className="w-full bg-cyan-500 text-white px-3 py-1.5 text-sm rounded hover:bg-cyan-600 transition-colors flex items-center justify-center gap-1"
-              disabled={isLoading}
-            >
-              <IconCloudUpload className="h-3 w-3" />
-              上传到云端
-            </button>
-
-            <button
-              onClick={handleDownloadFromSupabase}
-              className="w-full bg-indigo-500 text-white px-3 py-1.5 text-sm rounded hover:bg-indigo-600 transition-colors flex items-center justify-center gap-1"
-              disabled={isLoading}
-            >
-              <IconCloudDownload className="h-3 w-3" />
-              从云端下载
-            </button>
-
-            <div className="flex gap-1">
-              <button
-                onClick={handleCompareData}
-                className="flex-1 bg-orange-500 text-white px-2 py-1.5 text-xs rounded hover:bg-orange-600 transition-colors flex items-center justify-center gap-1"
-                disabled={isLoading}
-              >
-                <IconRefresh className="h-3 w-3" />
-                比较
-              </button>
-              
-              <button
-                onClick={handleExportLocalData}
-                className="flex-1 bg-teal-500 text-white px-2 py-1.5 text-xs rounded hover:bg-teal-600 transition-colors flex items-center justify-center gap-1"
-                disabled={isLoading}
-              >
-                <IconDownload className="h-3 w-3" />
-                导出
-              </button>
-            </div>
-          </div>
-
-          <button
-            onClick={() => router.push('/')}
-            className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-          >
-            <IconHome className="h-4 w-4" />
-            返回首页
-          </button>
         </div>
       </div>
 
@@ -480,9 +576,9 @@ export default function AdminDocsPage() {
         {selectedDoc ? (
           <>
             {/* 头部信息 */}
-            <div className="bg-white border-b border-gray-200 px-6 py-6">
+            <div className="bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-1">
                   <div className="flex-1">
                     {editingId === selectedDoc.id && editingField === 'label' ? (
                       <input
@@ -494,12 +590,12 @@ export default function AdminDocsPage() {
                           if (e.key === 'Enter') saveEdit();
                           if (e.key === 'Escape') cancelEdit();
                         }}
-                        className="text-2xl font-bold bg-gray-50 border border-gray-300 rounded px-3 py-2 w-full"
+                        className="text-xl font-bold bg-gray-50 border border-gray-300 rounded px-3 py-2 w-full"
                         autoFocus
                       />
                     ) : (
                       <h1
-                        className="text-2xl font-bold text-gray-900 cursor-pointer hover:bg-gray-100 px-3 py-2 rounded"
+                        className="text-xl font-bold text-gray-900 cursor-pointer hover:bg-gray-100 px-3 py-2 rounded"
                         onClick={() => startEdit(selectedDoc.id, 'label', selectedDoc.label)}
                       >
                         {selectedDoc.label}
@@ -507,7 +603,7 @@ export default function AdminDocsPage() {
                     )}
                     
                     <div className="text-sm text-gray-500 mt-1 px-3">
-                      {selectedDoc.level === 1 ? '一级目录' : '二级目录'}
+                      {selectedDoc.level === 1 ? '📁 目录' : '📄 文档'}
                       {selectedDoc.content && ` • ${selectedDoc.content.length} 字符`}
                     </div>
                   </div>
@@ -520,7 +616,7 @@ export default function AdminDocsPage() {
                       className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
                     >
                       <IconEdit className="h-4 w-4" />
-                      编辑内容
+                      编辑
                     </button>
                   )}
                   
@@ -540,7 +636,7 @@ export default function AdminDocsPage() {
                 {selectedDoc.level === 2 && selectedDoc.content ? (
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <div className="prose max-w-none">
-                      <pre className="whitespace-pre-wrap text-gray-700">
+                      <pre className="whitespace-pre-wrap text-gray-700 font-sans leading-relaxed">
                         {selectedDoc.content}
                       </pre>
                     </div>
@@ -549,13 +645,13 @@ export default function AdminDocsPage() {
                   <div className="bg-white rounded-lg border border-gray-200 p-6 text-center text-gray-500">
                     {selectedDoc.level === 1 ? (
                       <div>
-                        <p className="mb-4">这是一个一级目录</p>
-                        <p>请在左侧添加子目录来组织内容</p>
+                        <p className="mb-4">📁 这是一个目录</p>
+                        <p>请在左侧添加文档来组织内容</p>
                       </div>
                     ) : (
                       <div>
-                        <p className="mb-4">暂无内容</p>
-                        <p>点击&quot;编辑内容&quot;按钮来添加内容</p>
+                        <p className="mb-4">📄 空白文档</p>
+                        <p>点击"编辑"按钮来添加内容</p>
                       </div>
                     )}
                   </div>
@@ -566,30 +662,32 @@ export default function AdminDocsPage() {
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-gray-500">
-              <p className="text-lg mb-2">请选择一个项目</p>
-              <p>或在左侧添加新的目录</p>
+              <p className="text-lg mb-2">📚 选择一个文档开始编辑</p>
+              <p>或在左侧创建新的目录和文档</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* 富文本编辑器模态框 - 全屏 */}
+      {/* 富文本编辑器模态框 */}
       {showEditor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full h-full max-w-none max-h-none m-4 flex flex-col">
+          <div className="bg-white rounded-lg shadow-xl w-full h-full max-w-none max-h-none m-4 flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">编辑内容</h3>
+              <h3 className="text-lg font-semibold">✏️ 编辑文档</h3>
               <div className="flex items-center gap-2">
                 <button
                   onClick={saveEditorContent}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors flex items-center gap-2"
                 >
+                  <IconDeviceFloppy className="h-4 w-4" />
                   保存
                 </button>
                 <button
                   onClick={() => setShowEditor(null)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors flex items-center gap-2"
                 >
+                  <IconX className="h-4 w-4" />
                   取消
                 </button>
               </div>
@@ -615,43 +713,11 @@ export default function AdminDocsPage() {
                     <IconItalic className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => insertMarkdown('underline', '下划线文本')}
-                    className="p-2 hover:bg-gray-200 rounded"
-                    title="下划线"
-                  >
-                    <IconUnderline className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => insertMarkdown('strikethrough', '删除线文本')}
-                    className="p-2 hover:bg-gray-200 rounded"
-                    title="删除线"
-                  >
-                    <IconStrikethrough className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* 代码和链接 */}
-                <div className="flex items-center gap-1 mr-4">
-                  <button
                     onClick={() => insertMarkdown('code', '内联代码')}
                     className="p-2 hover:bg-gray-200 rounded"
                     title="内联代码"
                   >
                     <IconCode className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => insertMarkdown('codeblock')}
-                    className="p-2 hover:bg-gray-200 rounded text-xs"
-                    title="代码块"
-                  >
-                    {'{}'}
-                  </button>
-                  <button
-                    onClick={() => insertMarkdown('link')}
-                    className="p-2 hover:bg-gray-200 rounded"
-                    title="链接"
-                  >
-                    <IconLink className="h-4 w-4" />
                   </button>
                 </div>
 
@@ -676,6 +742,13 @@ export default function AdminDocsPage() {
                 {/* 其他 */}
                 <div className="flex items-center gap-1 mr-4">
                   <button
+                    onClick={() => insertMarkdown('link')}
+                    className="p-2 hover:bg-gray-200 rounded"
+                    title="链接"
+                  >
+                    <IconLink className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={() => insertMarkdown('quote')}
                     className="p-2 hover:bg-gray-200 rounded"
                     title="引用"
@@ -683,18 +756,11 @@ export default function AdminDocsPage() {
                     <IconBlockquote className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => insertMarkdown('hr')}
-                    className="p-2 hover:bg-gray-200 rounded"
-                    title="分割线"
+                    onClick={() => insertMarkdown('codeblock')}
+                    className="p-2 hover:bg-gray-200 rounded text-xs"
+                    title="代码块"
                   >
-                    <IconMinus className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => insertMarkdown('table')}
-                    className="p-2 hover:bg-gray-200 rounded"
-                    title="表格"
-                  >
-                    <IconTable className="h-4 w-4" />
+                    {'{}'}
                   </button>
                 </div>
 
@@ -713,21 +779,47 @@ export default function AdminDocsPage() {
               </div>
             </div>
 
-            {/* 编辑器 - 全屏 */}
-            <div className="flex-1 p-4">
-              <textarea
-                id="content-editor"
-                value={editorContent}
-                onChange={(e) => setEditorContent(e.target.value)}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                className="w-full h-full border border-gray-300 rounded-lg p-4 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="在这里编写Markdown内容...&#10;&#10;支持拖拽图片上传！"
-              />
+            {/* 编辑器 */}
+            <div className="flex-1 p-4 flex gap-4 min-h-0 overflow-hidden">
+              {/* 编辑区域 */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="text-sm text-gray-600 mb-2">✏️ 编辑区域</div>
+                <textarea
+                  id="content-editor"
+                  value={editorContent}
+                  onChange={(e) => setEditorContent(e.target.value)}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  className="w-full flex-1 border border-gray-300 rounded-lg p-4 font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-auto"
+                  placeholder="# 文档标题
+
+在这里编写 Markdown 内容...
+
+支持拖拽图片上传！"
+                />
+              </div>
+              
+              {/* 预览区域 */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <div className="text-sm text-gray-600 mb-2">👁️ 预览区域</div>
+                <div className="flex-1 border border-gray-300 rounded-lg p-4 bg-white overflow-auto">
+                  <div 
+                    className="prose max-w-none break-words"
+                    style={{ 
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      maxWidth: '100%'
+                    }}
+                    dangerouslySetInnerHTML={{ 
+                      __html: renderMarkdownPreview(editorContent)
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-}
+} 

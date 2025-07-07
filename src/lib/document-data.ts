@@ -341,34 +341,89 @@ const saveLocalStorageData = (documents: DocumentItem[]): void => {
 export const getDocumentData = async (): Promise<DocumentItem[]> => {
   // 检查是否配置了 Supabase
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.log('Supabase 未配置，使用本地存储');
+    console.log('🔧 Supabase 未配置，使用本地存储');
+    return getLocalStorageData();
+  }
+
+  // 检查网络连接
+  if (typeof window !== 'undefined' && !navigator.onLine) {
+    console.log('🌐 网络断开，使用本地存储');
     return getLocalStorageData();
   }
 
   try {
+    console.log('🔄 尝试连接 Supabase...');
+    
     const { data, error } = await supabase
       .from('documents')
-      .select('*')
-      .order('level', { ascending: true })
-      .order('created_at', { ascending: true });
+      .select('*');
 
     if (error) {
-      console.error('获取文档数据失败:', error);
-      console.log('回退到本地存储');
+      console.error('❌ Supabase 查询错误:', error);
+      console.log('🔄 回退到本地存储');
       return getLocalStorageData();
     }
 
     if (!data || data.length === 0) {
-      console.log('数据库为空，返回默认数据');
+      console.log('📭 Supabase 数据库为空，检查本地存储');
+      const localData = getLocalStorageData();
+      // 如果本地存储有数据且不是默认数据，则使用本地数据
+      if (localData.length > 0 && localData !== defaultDocuments) {
+        console.log('✅ 使用本地存储的数据');
+        return localData;
+      }
+      console.log('🔄 使用默认数据');
       return defaultDocuments;
     }
 
-    return convertFromDatabase(data);
+    console.log('✅ 成功获取 Supabase 数据:', data.length, '条');
+    const convertedData = convertFromDatabase(data);
+    
+    // 自定义排序逻辑：确保正确的层级顺序
+    const sortedData = sortDocuments(convertedData);
+    
+    return sortedData;
   } catch (error) {
-    console.error('Supabase 连接失败:', error);
-    console.log('回退到本地存储');
+    console.error('🚫 Supabase 连接失败:', error);
+    
+    // 检查是否是网络错误
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch') || 
+          error.message.includes('NetworkError') ||
+          error.message.includes('ERR_INTERNET_DISCONNECTED')) {
+        console.log('🌐 网络连接问题，使用本地存储');
+      } else {
+        console.log('⚠️ 其他错误，使用本地存储');
+      }
+    }
+    
     return getLocalStorageData();
   }
+};
+
+// 文档排序函数
+const sortDocuments = (documents: DocumentItem[]): DocumentItem[] => {
+  // 定义正确的顺序
+  const orderMap: { [key: string]: number } = {
+    '1': 1,     // 快速入门
+    '2': 2,     // AiCoin PC  
+    '3': 3,     // 高级功能
+    '1-1': 11,  // Vibe Coding 介绍
+    '1-2': 12,  // 如何 Vibe Coding
+    '1751815110064': 13, // 使用 Cursor
+    '2-1': 21,  // 快速开始
+    '2-2': 22,  // 项目结构
+    '1751815181874': 23, // 需求举例
+    '1751815184753': 24, // 提交代码
+    '3-1': 31,  // API 集成
+    '3-2': 32,  // 插件开发
+  };
+
+  return documents.sort((a, b) => {
+    const orderA = orderMap[a.id] || 999;
+    const orderB = orderMap[b.id] || 999;
+    return orderA - orderB;
+  });
 };
 
 // 同步版本（用于向后兼容）
@@ -378,16 +433,23 @@ export const getDocumentDataSync = (): DocumentItem[] => {
 
 // 保存文档数据到 Supabase（异步）
 export const saveDocumentData = async (documents: DocumentItem[]): Promise<boolean> => {
+  console.log('🔄 开始保存文档数据到 Supabase');
+  console.log('📊 要保存的数据:', documents.length, '条');
+  console.log('📝 数据预览:', documents.slice(0, 2));
+  
   // 总是先保存到本地存储作为备份
   saveLocalStorageData(documents);
+  console.log('✅ 已备份到本地存储');
 
   // 检查是否配置了 Supabase
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.log('Supabase 未配置，仅保存到本地存储');
+    console.log('⚠️ Supabase 未配置，仅保存到本地存储');
     return true;
   }
 
   try {
+    console.log('🗑️ 正在删除现有数据...');
+    
     // 删除现有数据
     const { error: deleteError } = await supabase
       .from('documents')
@@ -395,25 +457,53 @@ export const saveDocumentData = async (documents: DocumentItem[]): Promise<boole
       .neq('id', '');
 
     if (deleteError) {
-      console.error('删除现有数据失败:', deleteError);
+      console.error('❌ 删除现有数据失败:', deleteError);
+      console.error('删除错误详情:', {
+        message: deleteError.message || '未知错误',
+        details: deleteError.details || '无详细信息',
+        hint: deleteError.hint || '无提示',
+        code: deleteError.code || '未知代码'
+      });
       return false;
     }
+    
+    console.log('✅ 现有数据删除成功');
+
+    // 转换数据格式
+    console.log('🔄 正在转换数据格式...');
+    const dbData = convertToDatabase(documents);
+    console.log('📊 转换后的数据:', dbData.length, '条');
+    console.log('📝 转换后数据预览:', dbData.slice(0, 2));
 
     // 插入新数据
-    const dbData = convertToDatabase(documents);
-    const { error: insertError } = await supabase
+    console.log('📤 正在插入新数据...');
+    const { error: insertError, data: insertData } = await supabase
       .from('documents')
-      .insert(dbData);
+      .insert(dbData)
+      .select();
 
     if (insertError) {
-      console.error('保存文档数据失败:', insertError);
+      console.error('❌ 保存文档数据失败:', insertError);
+      console.error('插入错误详情:', {
+        message: insertError.message || '未知错误',
+        details: insertError.details || '无详细信息',
+        hint: insertError.hint || '无提示',
+        code: insertError.code || '未知代码'
+      });
       return false;
     }
 
-    console.log('数据已成功保存到 Supabase');
+    console.log('✅ 数据插入成功:', insertData?.length, '条');
+    console.log('📊 插入结果预览:', insertData?.slice(0, 2));
+    console.log('🎉 数据已成功保存到 Supabase');
     return true;
   } catch (error) {
-    console.error('Supabase 保存失败:', error);
+    console.error('🚫 Supabase 保存失败:', error);
+    console.error('捕获的错误详情:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : '未知错误',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return false;
   }
 };

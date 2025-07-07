@@ -11,19 +11,27 @@ export default function VibeCodingPage() {
   const router = useRouter();
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [showTopShadow, setShowTopShadow] = useState(false);
 
   // 加载文档数据
   useEffect(() => {
     const loadData = async () => {
-      const data = await getDocumentData();
-      setDocuments(data);
-      
-      // 默认选择第一个有内容的二级文档
-      const firstContentDoc = data.find(doc => doc.level === 2 && doc.content);
-      if (firstContentDoc) {
-        setSelectedNodeId(firstContentDoc.id);
+      try {
+        const data = await getDocumentData();
+        setDocuments(data);
+        
+        // 默认选择第一个有内容的二级文档
+        const firstContentDoc = data.find(doc => doc.level === 2 && doc.content);
+        if (firstContentDoc) {
+          setSelectedNodeId(firstContentDoc.id);
+        }
+      } catch (error) {
+        console.error('加载文档数据失败:', error);
+        // 如果加载失败，设置空数组
+        setDocuments([]);
       }
     };
+
     loadData();
   }, []);
 
@@ -52,7 +60,26 @@ export default function VibeCodingPage() {
 
   // 处理节点点击
   const handleNodeClick = (node: TreeNode) => {
+    const clickedDoc = documents.find(doc => doc.id === node.id);
+    
+    // 如果点击的是一级目录，自动选择其第一个子文档
+    if (clickedDoc && clickedDoc.level === 1) {
+      const firstChild = documents.find(doc => 
+        doc.level === 2 && doc.parentId === clickedDoc.id && doc.content
+      );
+      if (firstChild) {
+        setSelectedNodeId(firstChild.id);
+        return;
+      }
+    }
+    
     setSelectedNodeId(node.id);
+  };
+
+  // 处理滚动事件，控制顶部阴影显示
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    setShowTopShadow(scrollTop > 0);
   };
 
   // 渲染 Markdown 内容
@@ -116,6 +143,27 @@ export default function VibeCodingPage() {
         );
       }
       
+      // 处理图片
+      const imageMatch = line.match(/!\[([^\]]*)\]\(([^)]+)\)/);
+      if (imageMatch) {
+        const [, altText, src] = imageMatch;
+        return (
+          <div key={index} className="my-6">
+            <img 
+              src={src} 
+              alt={altText} 
+              className="max-w-full h-auto rounded-lg shadow-md"
+              style={{ maxHeight: '500px' }}
+              onError={(e) => {
+                // 如果图片加载失败，显示占位符
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+          </div>
+        );
+      }
+      
       // 处理粗体和斜体
       let processedLine = line;
       processedLine = processedLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -138,16 +186,16 @@ export default function VibeCodingPage() {
   const treeData = convertToTreeData(documents);
 
   return (
-    <div className="h-screen bg-white flex">
+    <div className="h-screen bg-white flex overflow-hidden">
       {/* 左侧导航栏 */}
-      <div className="w-80 bg-gray-50 flex flex-col">
+      <div className="w-80 bg-white flex flex-col">
         {/* 头部 */}
-        <div className="px-6 pt-6 pb-4">
+        <div className="px-6 py-4">
           <h1 className="text-xl font-bold text-gray-900">Vibe Coding</h1>
           <p className="text-sm text-gray-600 mt-1">知识库文档</p>
         </div>
 
-        {/* 树形导航 - 移除左右间距，与标题左对齐 */}
+        {/* 树形导航 */}
         <div className="flex-1 overflow-auto pb-4">
           <TreeView
             data={treeData}
@@ -163,7 +211,7 @@ export default function VibeCodingPage() {
         <div className="px-6 pb-6">
           <motion.button
             onClick={() => router.push('/')}
-            className="w-full flex items-center py-2 px-3 cursor-pointer transition-all duration-200 relative group rounded-md hover:bg-accent/50 text-muted-foreground hover:text-foreground"
+            className="w-full flex items-center py-2 px-3 cursor-pointer transition-all duration-200 relative group rounded-md mx-1 hover:bg-accent/50 text-muted-foreground hover:text-foreground"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.15 }}
@@ -185,17 +233,18 @@ export default function VibeCodingPage() {
         {selectedDoc ? (
           <>
             {/* 文档头部 */}
-            <div className="bg-white px-6 py-6 flex-shrink-0 relative">
+            <div className="bg-white px-6 py-4 relative z-10">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{selectedDoc.label}</h1>
               </div>
-              {/* 渐变阴影 */}
-              <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-b from-transparent to-gray-100/20 pointer-events-none"></div>
             </div>
 
-            {/* 文档内容 - 固定高度并允许滚动 */}
-            <div className="flex-1 overflow-auto">
-              <div className="px-6">
+            {/* 文档内容 */}
+            <div className="flex-1 overflow-auto relative" onScroll={handleScroll}>
+              {/* 顶部渐变阴影 - 只在滚动时显示 */}
+              <div className={`absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-white via-white/60 to-transparent pointer-events-none z-10 transition-opacity duration-300 ${showTopShadow ? 'opacity-100' : 'opacity-0'}`}></div>
+              
+              <div className="px-6 pt-4">
                 {selectedDoc.level === 2 && selectedDoc.content ? (
                   <div className="prose prose-lg max-w-none">
                     {renderMarkdownContent(selectedDoc.content)}
@@ -204,9 +253,7 @@ export default function VibeCodingPage() {
                   <div className="text-center text-gray-500 py-12">
                     {selectedDoc.level === 1 ? (
                       <div>
-                        <h2 className="text-2xl font-bold mb-4">{selectedDoc.label}</h2>
-                        <p className="text-lg">这是一个目录分类</p>
-                        <p className="text-sm mt-2">请在左侧选择具体的文档查看内容</p>
+                        <h1 className="text-7xl font-normal text-black mb-4">PM.DEV 知识库</h1>
                       </div>
                     ) : (
                       <div>
@@ -220,10 +267,10 @@ export default function VibeCodingPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <h2 className="text-2xl font-bold mb-4">欢迎来到 Vibe Coding</h2>
-              <p className="text-lg">请在左侧选择一个文档开始阅读</p>
+          <div className="flex-1 flex items-center justify-center bg-white">
+            <div className="text-center">
+              <h1 className="text-7xl font-normal text-black mb-4">PM.DEV 知识库</h1>
+              <p className="text-lg text-gray-600">请在左侧选择一个文档开始阅读</p>
             </div>
           </div>
         )}
