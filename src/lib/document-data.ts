@@ -308,11 +308,11 @@ const convertToDatabase = (items: DocumentItem[]): Omit<DatabaseDocumentItem, 'c
     id: item.id,
     label: item.label,
     level: item.level,
-    parent_id: item.parentId || null,
-    content: item.content || null,
-    first_heading: item.firstHeading || null,
-    second_heading: item.secondHeading || null,
-    sub_headings: item.subHeadings || null
+    parent_id: item.parentId || undefined,
+    content: item.content || undefined,
+    first_heading: item.firstHeading || undefined,
+    second_heading: item.secondHeading || undefined,
+    sub_headings: item.subHeadings || undefined
   }));
 };
 
