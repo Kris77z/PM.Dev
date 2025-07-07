@@ -122,7 +122,7 @@ export default function AdminDocsPage() {
     const doc = documents.find(d => d.id === id);
     if (!doc) return;
     
-    if (confirm(`确定要删除 "${doc.label}" 吗？${doc.level === 1 ? '这将同时删除所有子文档。' : ''}`)) {
+    if (confirm(`确定要删除 &quot;${doc.label}&quot; 吗？${doc.level === 1 ? '这将同时删除所有子文档。' : ''}`)) {
       let newDocs = documents.filter(doc => doc.id !== id);
       
       // 如果删除的是一级目录，同时删除其子文档
@@ -242,7 +242,7 @@ export default function AdminDocsPage() {
       // 检查是否是图片ID，如果是则从内存中获取base64数据
       const imageData = imageDataMap.get(src);
       const actualSrc = imageData || src;
-      return `<img src="${actualSrc}" alt="${altText}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />`;
+      return `<img src="${actualSrc}" alt="${altText}" style=\"max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);\" />`;
     });
     
     // 处理列表
